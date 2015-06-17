@@ -31,8 +31,8 @@ CREATE OR REPLACE PACKAGE BODY load_indu_details AS
 
   PROCEDURE pre_checks AS
 /*
-    Sure dbms Table Constraints are used to Deny Duplicates.
-    But this code is needed to Alert the very violating rows.
+    Sure dbms Table Constraints are the real way to resist anomalous data.
+    But this code is needed to Alert those very violating rows.
 */  
     r_domain       ext_load_domain%ROWTYPE;
     r_part         tmp_load_part%ROWTYPE;
@@ -53,7 +53,7 @@ CREATE OR REPLACE PACKAGE BODY load_indu_details AS
       RAISE_APPLICATION_ERROR(-20000, 'DUPLICATE CONSTANT: ' || r_domain.value);
     EXCEPTION
       WHEN NO_DATA_FOUND THEN
-        NULL; -- none of these checks are expected to find anything
+        NULL; -- these checks are only expected to find violations against db semantical integrity
     END;
   
   
@@ -375,9 +375,10 @@ CREATE OR REPLACE PACKAGE BODY load_indu_details AS
 /*
     THIS Procedure is the most important piece of code!
     
-    Materializes all required materials (part) for all products (produce). Correct ME applies to every distinct EVE-job.
+    Materializes all required materials (part) for all products (produce).
+    Correct material efficiency applies to every distinct Industry Job in EVE.
     Recursively drills down on products that are themselves composites of composites.
-    Particularly important as products may have different Material Efficiencies
+    Particularly important as products may have different material efficiencies
     on different underlying composites/jobs (=effectively denying a single SQL).
     
     Amounts are decimals to allow later SQL to calculate ME on Batches of that kind of good.
@@ -589,8 +590,7 @@ CREATE OR REPLACE PACKAGE BODY load_indu_details AS
 
 /*
       Stamp composites to separate them from atomic parts.
-      More convenient in the final, already complex SQLs,
-      to read this than do subqueries.
+      More convenient in the final, already complex SQLs, to rely on this field than do subqueries.
 */
       UPDATE produce inp
       SET    inp.transitive = 'TRUE'

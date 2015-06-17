@@ -11,6 +11,7 @@
     - current user:                   oracle
     - password for everyting:         SomePasswd123
     - these scripts are at:           /home/oracle/Documents/eve
+    - you have set up an EVE API KEY for your Player Character in EVE Online
 */
 
 

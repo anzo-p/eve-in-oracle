@@ -62,7 +62,7 @@ CREATE OR REPLACE PACKAGE BODY load_player_data AS
     l_site              CLOB;
     a_pieces            utl_http.html_pieces;    
     x_doc               XMLTYPE;
-    v_cached_until      VARCHAR2(20);                       -- YYYY-MM-DD HH24:MI:SS
+    v_cached_until      VARCHAR2(20);
     ts_cached_until     cache_asset_list.cached_until%TYPE;
 
   BEGIN
@@ -102,7 +102,7 @@ CREATE OR REPLACE PACKAGE BODY load_player_data AS
           FROM   TABLE(XMLSEQUENCE(EXTRACT(x_doc
                                           ,'/eveapi'))) cch;
 
-          ts_cached_until := TO_TIMESTAMP(v_cached_until, 'YYYY-MM-DD HH24:MI:SS')           -- <cachedUntil> at Server Timezone
+          ts_cached_until := TO_TIMESTAMP(v_cached_until, utils.k_mask_timestamp_eveapi_xml) -- <cachedUntil> at Server Timezone
                             +(CAST(SYSTIMESTAMP AS TIMESTAMP)                                -- timezone difference to Host Machine
                              -CAST(SYSTIMESTAMP AT TIME ZONE 'Europe/London' AS TIMESTAMP));
 
@@ -155,7 +155,7 @@ CREATE OR REPLACE PACKAGE BODY load_player_data AS
                                    --,singleton       INTEGER      PATH '@singleton'
                                    --,raw_quantity    INTEGER      PATH '@rawQuantity'
   
-        --LEFT OUTER JOIN part prt ON prt.eveapi_part_id = cld.type_id
+        --LEFT OUTER JOIN part prt ON prt.eveapi_part_id = cld.type_id -- DEBUG
         INNER JOIN part prt ON prt.eveapi_part_id = cld.type_id
   
         WHERE     cch.corp_char_name    =   r_chr.name
@@ -183,7 +183,7 @@ CREATE OR REPLACE PACKAGE BODY load_player_data AS
 
            2. And so we OUTER JOIN on the XML-data because not sure there is any,
               but INNER JOIN on the same table that we are about to UPDATE (part).
-           
+
            3. Now, if we find any quantity in the XML, we use that
               but if we dont, we known the pile must be 0.
 */

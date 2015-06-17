@@ -118,21 +118,22 @@
 
 
 
-/*
-    Illustrate the concept of Practical High / Low
 
-    Lowest Offer:     Lowest price available, though might be only few items and so not a very convenient info
-    Best Practical:   a more likely price when you need to buy quantities to actually build something meaningful
-    Offers Low Range: 
+/*
+    Illustrate the concept of Practical Price
+
+    Lowest Offer:       lowest price available, though might be only few available and so not very reliable info
+    Best Practical:     a more likely price when you need to buy sufficient quantities to actually build something
+    Offers Low Range:   average out all regions Best Practicals
     
     Params, eg.:
       Part:    TRITANIUM
       Regions: NOT NULL to show source data (also best_practical and offers_low_range becomes equal)
 */
   SELECT INITCAP(  prt.label)                AS part
-        ,      MIN(agr.lowest_offer)         AS lowest_offer        -- best price in all new eden
-        ,      MIN(agr.offers_low_range)     AS best_practical      -- best regional price out of all regions
-        ,ROUND(AVG(agr.offers_low_range), 2) AS avg_low_all_regions -- average out all regions best prices
+        ,      MIN(agr.lowest_offer)         AS lowest_offer
+        ,      MIN(agr.offers_low_range)     AS best_practical
+        ,ROUND(AVG(agr.offers_low_range), 2) AS avg_low_all_regions
         ,CASE
            WHEN :regions IS NOT NULL THEN INITCAP(agr.name_region)
          END AS regions

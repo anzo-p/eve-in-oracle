@@ -18,7 +18,7 @@ CREATE OR REPLACE PACKAGE load_market_data IS
 
 /*
     Limit the size of incoming XML and speed up processing by parametrising the regions of interest. (SELECT * FROM region).
-    Most likely you want Empire/Hisec coverage on Regions where you operate + trade hubs Regions for price reference.
+    Most likely you will want Empire/Hisec coverage on Regions where you operate + Trade Hubs Regions for price reference.
 */                                                                             
   k_regions_of_interest          CONSTANT VARCHAR2(300)                     := -- Local Regions
                                                                                   '&'||'regionlimit=10000033'  -- Citadel, the
@@ -41,7 +41,7 @@ CREATE OR REPLACE PACKAGE load_market_data IS
   k_jumpfreightful               CONSTANT PLS_INTEGER                       := 300000; -- Jump Freighter Cargo Bay
 
   k_eveapi_fetch_jobs_per_sec    CONSTANT PLS_INTEGER                       := 5;
-  k_build_cost_multiplier        CONSTANT NUMBER(5,2)                       := 1.03;   -- build cost is 1.5% of EVE-Global-Killboard-Aggregates, and "not expected to change dramatically", double it for Margin-of-Safety
+  k_build_cost_multiplier        CONSTANT NUMBER(5,2)                       := 1.03;   -- build cost is 1.5% of EVE-Global-Killboard-Aggregates, and "not expected to change dramatically", double it for "Margin of Safety"
   k_sales_cost_multiplier        CONSTANT NUMBER(5,2)                       := 1.02;   -- Tax 0.75% + Optimal Brokering 0.75% + contingency + ignorance on that it should apply deducted from 100% not added to 100%
 
   
@@ -104,7 +104,7 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
 
   FUNCTION get_breakeven(p_param IN NUMBER) RETURN NUMBER AS
 /*
-    Add build costs on top of p_param to get BREAKeven.
+    Add build costs on top of p_param to get Breakeven.
     Could be more deterministic, but "Better to be roughly right than precisely wrong" - J.M. Keynes.
 */
   BEGIN
@@ -123,8 +123,9 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
 /*
     Get the cheapest region for part. The need for this query came from the heaviest SQLs.
     Putting functions into SQL tempted me to Cache the Result to ptomote performance:
-      the call Parameters and the Return Value will be stored in RAM memory from where it is
-      accesible superfast, until the tables defined at the RELIES_ON list change.
+
+    the call Parameters and the Return Value will be stored in RAM memory from where it is
+    accesible superfast, until the tables defined at the RELIES_ON list change.
 */
     v_return   market_aggregate.region%TYPE;
 
@@ -165,11 +166,10 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
   PROCEDURE merge_market_aggregate(p_part      IN part.label%TYPE
                                   ,p_direction IN market_order.direction%TYPE) AS
 /*
-   IMPORTANT: Assume you need 10,000 (ten thousand) pieces of and Item.
+   IMPORTANT: Assume you need a quantity of 10,000 (ten thousand) of and Item.
    Surely you can NOT travel across the galaxy to acquire a single or a few?
    
-   No. We must come up with a more Credible/Practical/Realistic sense of
-   a Budget Price Level for this item.
+   No. We must come up with a more Credible/Practical/Realistic sense of a Budget Price Level.
    
    And so in this code we will sum up a number of the Sell (or Buy) Orders
    beginning from the Lowest (or Highest) and then divide the Total Price with the Quantity.
@@ -357,7 +357,7 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
     quicklook does not have <cachedUntil> so lets make our own,
     though not requird for quicklook by CCP (at the time of writing).
 
-    Bear in mind that meaningful/noticeable changes on the market takes hours to develop.
+    Bear in mind that meaningful/noticeable changes on the market takes many hours to develop.
     And limiting the list of items whose quotations to refresh will streamline the load process.
     (Though this no longer seems to be an issue in Oracle 12c with the optimized XML processing).
 */

@@ -9,6 +9,7 @@ CREATE OR REPLACE PACKAGE utils IS
 
   k_mask_price_eveapi_xml         CONSTANT VARCHAR2(20)                        := '999999999999999D99';
   k_mask_date_eveapi_xml          CONSTANT VARCHAR2(10)                        := 'YYYY-MM-DD';
+  k_mask_timestamp_eveapi_xml     CONSTANT VARCHAR2(21)                        := 'YYYY-MM-DD HH24:MI:SS';
   k_nls_decimal_chars             CONSTANT VARCHAR2(35)                        := 'NLS_NUMERIC_CHARACTERS = ''.,''';
 
 
@@ -71,7 +72,7 @@ CREATE OR REPLACE PACKAGE BODY utils AS
   FUNCTION request_xml(p_url VARCHAR2)
   RETURN XMLTYPE AS
 /*
-    Gets the XML from Web Service and returns it as a SELECTable datatype.
+    Gets the XML through http and returns it as a SELECTable datatype.
 */
     l_site       CLOB;
     a_pieces     utl_http.html_pieces;    
@@ -86,7 +87,6 @@ CREATE OR REPLACE PACKAGE BODY utils AS
     dbms_lob.createtemporary(lob_loc => l_site
                             ,cache   => TRUE);
 
-    -- get XML from Web Service
     a_pieces := utl_http.request_pieces(p_url);
 
     -- append to single searchable object

@@ -4,14 +4,11 @@
     Whats fancy about this is that we can now control all loadable data through loader files
     and the population into database tables are done in a single transaction.
     
-    This is why i keep my loader files in human readable format.
+    This is why I keep my loader files in human readable format.
     (eg. GEdit or another notepadlike app, Fixed Width fonts required)
 */
 
 
-
---  DROP TABLE clobs;
---  DROP TABLE xmls;
 
   DROP TABLE ext_load_domain;
   DROP TABLE ext_load_part;
@@ -27,12 +24,6 @@
 
 
 
-
-
-
-
---  CREATE TABLE clobs                         (lob                      CLOB);
---  CREATE TABLE xmls                          (xdoc                     XMLTYPE);
 
 
 
@@ -65,7 +56,7 @@
     Right there inside the Access Parameters in these Table Definitions is the directory
     you created as ADMIN at 1_create_database.sql. This is why they are needed.
   
-    This table definition tells Oracle to go open that file (domain.txt in this case)
+    This table definition tells Oracle to go open that file (part.txt in this case)
     and read it as a Database Table using the rules Defined in Access Parameters.
     
     As you can see in every ext_load_* table the columns matches the columns in respective Loader File.  
@@ -144,7 +135,7 @@
 /*
     But External Tables are just a schema on top of a flatfile.
 
-    Most importantly this means, they cannot be Indexed (superslow search, superslow JOINs).
+    Most importantly this means that they cannot be Indexed (superslow search, superslow JOINs).
     No compromise on performance and so make exact Copies as real database tables into which to read the loader data.
 
     Temporary Tables, especially when ON COMMIT DELETE ROWS, tells everyone

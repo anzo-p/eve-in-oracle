@@ -1,7 +1,7 @@
 
 /*
-    Views are good for JOINs that you do all the time and SELECTing FROM view just spares lines and time.
-    JOINs that become so common that a View on that becomes Self-Evident, Self-Explanatory.
+    Views are good for JOINs that you do so often that SELECTing FROM a view just spares lines and time.
+    JOINs so common that a View on that becomes Self-Evident, Self-Explanatory.
 
     Views are NOT the right place to implement Business Logics and rules, however
     as that would lead to decentralising Logics all over the place.
@@ -45,12 +45,10 @@
                                ,station         VARCHAR2(20)  PATH 'station'
                                ,station_name    VARCHAR2(200) PATH 'station_name'
                                ,security        VARCHAR2(4)   PATH 'security'
-                               --,range           INTEGER       PATH 'range'
                                ,price           VARCHAR2(20)  PATH 'price'
                                ,vol_remain      INTEGER       PATH 'vol_remain'
                                ,min_volume      INTEGER       PATH 'min_volume'
                                ,expires         VARCHAR2(10)  PATH 'expires'
-                               --,reported_time
                                ) res ON 1=1;
 
 
@@ -70,12 +68,10 @@
                                ,station         VARCHAR2(20)  PATH 'station'
                                ,station_name    VARCHAR2(200) PATH 'station_name'
                                ,security        VARCHAR2(4)   PATH 'security'
-                               --,range           INTEGER       PATH 'range'
                                ,price           VARCHAR2(20)  PATH 'price'
                                ,vol_remain      INTEGER       PATH 'vol_remain'
                                ,min_volume      INTEGER       PATH 'min_volume'
                                ,expires         VARCHAR2(10)  PATH 'expires'
-                               --,reported_time
                                ) res ON 1=1;
 
 
