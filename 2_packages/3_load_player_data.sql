@@ -7,7 +7,7 @@ CREATE OR REPLACE PACKAGE load_player_data IS
 
 
   
-  k_loc_my_pos                   CONSTANT VARCHAR2(10)                        := '30005311'; -- the locationID of your POS here, download XML AssetList manually and deduce from there
+  k_loc_my_pos                   CONSTANT VARCHAR2(10)                        := '12345678'; -- the locationID of your POS here, download XML AssetList manually and deduce from there
   
   -- these would belong into loader files, and actually Impel is there already: SELECT * FROM part WHERE label = 'IMPEL'
   k_item_impel                   CONSTANT VARCHAR2(10)                        := '12753';
