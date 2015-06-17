@@ -22,7 +22,7 @@
          Adjust as percentage between highest_bid (-100), mid_spread (0), and lowest_offer (100), eg.:
 
             bid        mid       offer
-             |          |          |   -100: immediate cahs-in by selling to highest bidder
+             |          |          |   -100: immediate cash-in by selling to highest bidder
              |XXXXXXXXXX|          |      0: assume mid_spread
              |XXXXXXXXXX|XXXXX     |     50: between mid_spread and lowest_offer
              |XXXXXXXXXX|XXXXXXXXX |     90: barely undercut the lowest_offer... ofc takes progressively longer to sell
@@ -73,7 +73,7 @@
                 GROUP BY inp.good, goo.race) brk
 
 
-         -- sells and buys may OUTER JOIN to Product data, but they must INNER JOIN for market data because we need mid_spread
+         -- sells and buys may OUTER JOIN to Product data, but they must INNER JOIN together because we need mid_spread
          LEFT OUTER JOIN vw_avg_sells_regions sel ON  sel.part   = brk.good
               INNER JOIN vw_avg_buys_regions  buy ON  buy.part   = brk.good
                                                  AND  buy.region = sel.region
@@ -104,7 +104,11 @@
 
 
 /*
-    Whats the BREAKEVEN FOR PRODUCE if all input bought at market low? And where to buy those as cheapest
+    Whats the BREAKEVEN FOR PRODUCE if all input materials bought at lowest_offer? And from where to buy them cheapest.
+
+    You will want to be MORE Price Sensitive with parts that constitute to higher pct of the goods_total.
+    Also you may make generous profits even if you are LESS price sensitive with the low pct materials.
+    Better yet, as these prices actually are high-/low-end ranges, some materials you will likely get even cheaper.
 */
   SELECT INITCAP(SUBSTR(good, 1, 22)) AS good, batch AS n, INITCAP(SUBSTR(part, 1, 22)) AS part, INITCAP(origin) AS orig
 
@@ -117,7 +121,7 @@
 
         ,  TO_CHAR(short_volume,           '990G990G990D99') AS vol_short
 
-         -- most likely you need to haul moon goo with DST, uncomment others as necessary
+         -- most matetials you will likely want to haul with your Deep Space Transported (DST), uncomment others as necessary
         ,of_cargo_deeptransport                              AS dst -- of_cargo_freighter AS frg, of_cargo_jump_freighter AS jf
         ,  TO_CHAR(offers_low_range,       '990G990G990D99') AS quote
         ,INITCAP(SUBSTR(name_region, 1, 15)                ) AS region

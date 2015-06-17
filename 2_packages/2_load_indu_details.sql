@@ -7,6 +7,9 @@ CREATE OR REPLACE PACKAGE load_indu_details IS
     The compositions have something called material_efficiency: a value that decreases the quantities of required parts.
     And those Material Efficiencies are different for different compositions (called 'Blueprints' in EVE Online).
     It is more convenient both programmatically and performancewise to materialise them in advance, before SELECTing.
+
+    A little bit unfortuntely, all logics regarding material efficiency cannot be done here, but some will bubble up to SQLs.
+    This goes to illustrate how complex the rules are already in the EVE Online source code.
 */
 
 
@@ -381,7 +384,7 @@ CREATE OR REPLACE PACKAGE BODY load_indu_details AS
     Particularly important as products may have different material efficiencies
     on different underlying composites/jobs (=effectively denying a single SQL).
     
-    Amounts are decimals to allow later SQL to calculate ME on Batches of that kind of good.
+    Amounts are decimals to allow later SQL to calculate ME on Batches.
 */
 
     CURSOR c_composite(pc_good composite.good%TYPE) IS
