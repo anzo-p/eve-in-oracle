@@ -461,8 +461,8 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
   PROCEDURE submit_price_jobs(p_local_regions     IN VARCHAR2
                              ,p_security_limit    IN NUMBER) AS
   
+    k_ad_hoc_job   CONSTANT user_jobs.INTERVAL%TYPE := ''; -- IS NULL yes
     j_job                   user_jobs.JOB%TYPE;
-    v_ad_hoc_job   CONSTANT user_jobs.INTERVAL%TYPE := ''; -- IS NULL yes
   
   BEGIN
 
@@ -517,7 +517,7 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
                                                                 ', ' || REPLACE(TO_CHAR(p_security_limit),    ',', '.') || ');'
 
                      ,next_date => r_job.next_date
-                     ,interval  => v_ad_hoc_job);
+                     ,interval  => k_ad_hoc_job);
     END LOOP;
 
     

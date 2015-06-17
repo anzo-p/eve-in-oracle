@@ -6,7 +6,7 @@
     Views are NOT the right place to implement Business Logics and rules, however
     as that would lead to decentralising Logics all over the place.
         
-    Contra to that I like to use SELECTs that illustrate the full path of Source Data into Well Refined Intelligence.
+    Contra to that I like to use SELECTs that illustrate the full path of Source Data into well Refined Intelligence.
     This sometimes makes Largish SELECTs but thats OK because the SELECTs can (=MUST) be written in a way that keeps them Simple.
 */
 
@@ -56,7 +56,7 @@
     Duplicate to *qsells: not a good idea to have two virtually identical views
     though common to have only either Sell or Buy Orders up for spefic items/stations.
     Forcing that into a single view would mean OUTER JOINs, which surely kills performance.
-    As a downside Buys and Sells must follow this duplicate pattern allower the system.
+    As a downside Buys and Sells must follow this duplicate pattern through system.
 */
   CREATE OR REPLACE VIEW vw_eveapi_qbuys AS
     SELECT cch.item_type_id, res.*
