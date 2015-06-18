@@ -1,5 +1,12 @@
 CREATE OR REPLACE PACKAGE load_market_data IS
 
+/*
+    This site ofers these same prices online, one item at a time though.
+    May double-check to verify whether this code fetches the prices correctly.
+
+    https://eve-central.com
+*/
+
 
 
 --- Realism Rules -------------------------------------

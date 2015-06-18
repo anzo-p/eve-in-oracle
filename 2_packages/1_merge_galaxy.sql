@@ -5,7 +5,7 @@
 
 DECLARE
 
-  t_world     t_all_regions := t_all_regions(
+  t_galaxy     t_all_regions := t_all_regions(
 
     t_region(10000054, 'ARIDIA')
    ,t_region(10000069, 'BLACK RISE')
@@ -77,9 +77,9 @@ DECLARE
 BEGIN
 
   FOR i IN (SELECT one.*
-            FROM       TABLE(t_world) one
-            INNER JOIN TABLE(t_world) oth ON (oth.eveapi_region_id  = one.eveapi_region_id   AND oth.name_region <> one.name_region)
-                                          OR (oth.eveapi_region_id <> one.eveapi_region_id   AND oth.name_region  = one.name_region)) LOOP
+            FROM       TABLE(t_galaxy) one
+            INNER JOIN TABLE(t_galaxy) oth ON (oth.eveapi_region_id  = one.eveapi_region_id   AND oth.name_region <> one.name_region)
+                                           OR (oth.eveapi_region_id <> one.eveapi_region_id   AND oth.name_region  = one.name_region)) LOOP
 
     RAISE_APPLICATION_ERROR(-20000, 'DUPLICATE: ' || i.eveapi_region_id || ' OR ' || i.name_region);
   END LOOP;
@@ -89,7 +89,7 @@ BEGIN
 
   USING (SELECT eveapi_region_id
                ,name_region
-         FROM   TABLE(t_world)) ins
+         FROM   TABLE(t_galaxy)) ins
 
   ON (reg.eveapi_region_id = ins.eveapi_region_id)
 

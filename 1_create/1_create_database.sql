@@ -31,7 +31,7 @@ DEFAULT NOCOMPRESS;
 
 /*
     You might want a role with all needed rights, which you then grant to this User, and maybe others.
-    If you dont have it already you can make one now, and here are some that will be useful.
+    If you dont have it already you can make one now, and here are some useful rights.
 */
 CREATE ROLE "DEVELOPER" NOT IDENTIFIED;
 GRANT CREATE INDEXTYPE            TO "DEVELOPER";
