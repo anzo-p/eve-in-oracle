@@ -4,9 +4,9 @@
     A typical need for this is when we have data that need to be initialized into database
     right when the module itself loads into memory.
     
-    Functionally it is similar to having the data in loader tables and then make external tables on that
-    except here the the data is stored in the package header (*.pks) as Object and we can see both data and code
-    in the same file. Good when experimenting.
+    Functionally it is similar to having the data in loader files and having external tables on those
+    except that here the the data is stored in the package header (*.pks) as Object and we can see
+    both data and code in the same file. Good when experimenting.
 */
 
 

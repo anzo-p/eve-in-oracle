@@ -1,8 +1,8 @@
 
 /*
     These Tables are used to load data from local *.csv files into the System.
-    Whats fancy about this is that we can now control all loadable data through loader files
-    and the population into database tables are done in a single transaction.
+    Whats fancy about that is that we can now control all loadable data through loader files
+    and let the population into database tables to a single transaction.
     
     This is why I keep my loader files in Human Readable format.
     (eg. GEdit or another notepadlike app, Fixed Width fonts required)
@@ -134,9 +134,9 @@
 
 /*
     But External Tables are just a schema on top of a flatfile.
-
     Most importantly this means that they cannot be Indexed on (=superslow search, superslow JOINs).
-    No compromise on performance and so make exact Copies as real database tables into which to read the loader data.
+    No compromise on performance and so make exact Copies as
+    real database tables into which to read the loader data.
 
     Temporary Tables, especially when ON COMMIT DELETE ROWS, tells everyone
     that no business logic may be used on top of these these tables.

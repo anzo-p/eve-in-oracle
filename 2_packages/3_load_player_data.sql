@@ -5,10 +5,8 @@ CREATE OR REPLACE PACKAGE load_player_data IS
     Access EVE API XML for player data. Currently only getting the assets owned by Player/Corporation.
 */
 
-
-  
   k_loc_my_pos                   CONSTANT VARCHAR2(10)                        := '12345678'; -- the locationID of your POS here, download XML AssetList manually and deduce from there
-  
+
   -- these would belong into loader files, and actually Impel is there already: SELECT * FROM part WHERE label = 'IMPEL'
   k_item_impel                   CONSTANT VARCHAR2(10)                        := '12753';
   k_item_providence              CONSTANT VARCHAR2(10)                        := '20183';
@@ -18,9 +16,9 @@ CREATE OR REPLACE PACKAGE load_player_data IS
   -- here you put the access parameters required to get your Secured player data from EVE Online.
   t_assets                       CONSTANT t_char_corp := t_char_corp(
 
-    --         name          id          char_corp   keyid      verification_code
+    --         name          id          char/corp   keyid      verification_code
     t_api_key('CORP_NAME',  '12345678', 'corp',     '1234567', 'abcdefghijkljmopqrstuvwxyzABCDEFGHIJLKMNOPQRSTUVWXYZ0123456789ab') -- place your corp XML API keys for the Assets in the Factory
-    t_api_key('CHAR_NAME',  '12345678', 'char',     '1234567', 'abcdefghijkljmopqrstuvwxyzABCDEFGHIJLKMNOPQRSTUVWXYZ0123456789ab') -- place your char XML API keys for assets in the HaulerCargo Bay
+   ,t_api_key('CHAR_NAME',  '12345678', 'char',     '1234567', 'abcdefghijkljmopqrstuvwxyzABCDEFGHIJLKMNOPQRSTUVWXYZ0123456789ab') -- place your char XML API keys for assets in the HaulerCargo Bay
   );
 
 
@@ -32,6 +30,12 @@ CREATE OR REPLACE PACKAGE load_player_data IS
 
 END load_player_data;
 /
+
+
+
+
+
+
 
 
 
@@ -190,21 +194,23 @@ CREATE OR REPLACE PACKAGE BODY load_player_data AS
            FROM             part prt
            LEFT OUTER JOIN (SELECT     eveapi_item_type_id
                                   ,SUM(quantity)           AS quantity
-            
+                                  
                             FROM  (SELECT eveapi_item_type_id, quantity -- from Factory Hangars
-                                   FROM   tmp_load_assets ast
-                                   WHERE  ast.name                =  the corp name
+                                   FROM       tmp_load_assets ast
+                                   INNER JOIN TABLE(t_assets) chr ON chr.name = ast.name
+                                   WHERE  chr.char_corp           = 'corp'
                                    AND    ast.eveapi_location_id  =  load_player_data.v_get('k_loc_my_pos') -- if you copy this SQL out and DEBUG, it helps to have the v_get():s
                                    
                                    UNION ALL
 
                                    SELECT eveapi_item_type_id, quantity -- from my various Ship Cargoes if I maybe havent had time to drop them to factory yet
-                                   FROM   tmp_load_assets ast
-                                   WHERE  ast.name                =  your characters name
+                                   FROM       tmp_load_assets ast
+                                   INNER JOIN TABLE(t_assets) chr ON chr.name = ast.name
+                                   WHERE  ast.name                = 'char'
                                    AND    ast.eveapi_loc_type_id IN (load_player_data.v_get('k_item_impel')
                                                                     ,load_player_data.v_get('k_item_providence')
                                                                     ,load_player_data.v_get('k_item_ark')))                                   
-                        
+                                                          
                             GROUP BY eveapi_item_type_id) sel ON sel.eveapi_item_type_id = prt.eveapi_part_id) ins
 
     ON (prt.eveapi_part_id = ins.eveapi_part_id)

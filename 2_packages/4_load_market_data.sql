@@ -41,7 +41,7 @@ CREATE OR REPLACE PACKAGE load_market_data IS
   k_jumpfreightful               CONSTANT PLS_INTEGER                       := 300000; -- Jump Freighter Cargo Bay
 
   k_eveapi_fetch_jobs_per_sec    CONSTANT PLS_INTEGER                       := 5;
-  k_build_cost_multiplier        CONSTANT NUMBER(5,2)                       := 1.03;   -- build cost is 1.5% of EVE-Global-Killboard-Aggregates, and "not expected to change dramatically", double it for "Margin of Safety"
+  k_build_cost_multiplier        CONSTANT NUMBER(5,2)                       := 1.03;   -- build cost is 1.5% of EVE Online Global Killboard Aggregates, and "not expected to change dramatically", double it for "Margin of Safety"
   k_sales_cost_multiplier        CONSTANT NUMBER(5,2)                       := 1.02;   -- Tax 0.75% + Optimal Brokering 0.75% + contingency + ignorance on that it should apply deducted from 100% not added to 100%
 
   
@@ -121,9 +121,8 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
 
   RETURN market_aggregate.region%TYPE   RESULT_CACHE RELIES_ON (market_aggregate, local_regions) AS
 /*
-    Get the cheapest region for part. The need for this query came from the heaviest SQLs.
+    Get the cheapest region to buy part. The need for this query came from the heaviest SQLs.
     Putting functions into SQL tempted me to Cache the Result to ptomote performance:
-
     the call Parameters and the Return Value will be stored in RAM memory from where it is
     accesible superfast, until the tables defined at the RELIES_ON list change.
 */
@@ -170,7 +169,6 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
    Surely you can NOT travel across the galaxy to acquire a single or a few?
    
    No. We must come up with a more Credible/Practical/Realistic sense of a Budget Price Level.
-   
    And so in this code we will sum up a number of the Sell (or Buy) Orders
    beginning from the Lowest (or Highest) and then divide the Total Price with the Quantity.
 */
@@ -358,7 +356,7 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
     though not requird for quicklook by CCP (at the time of writing).
 
     Bear in mind that meaningful/noticeable changes on the market takes many hours to develop.
-    And limiting the list of items whose quotations to refresh will streamline the load process.
+    And limiting the list of items whose quotations to refresh will speed up the load process.
     (Though this no longer seems to be an issue in Oracle 12c with the optimized XML processing).
 */
     ts_cached_until := SYSTIMESTAMP

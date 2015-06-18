@@ -12,9 +12,27 @@
 
 
 
+  -- details on the composite
+  CREATE OR REPLACE VIEW vw_composite AS
+    SELECT *
+    FROM       part      prt
+    INNER JOIN composite cmp ON prt.label = cmp.good;
+    
+
+  -- details on a compositions constituents
+  CREATE OR REPLACE VIEW vw_composition AS
+    SELECT *
+    FROM       composite cmp
+    INNER JOIN part      prt ON prt.label = cmp.part;
+
+
+
 
 /*
-    Sample says it all - from here it is already possible to see how Oracle XMLDB Works, how the PASSING -parameters below map to the XML-snippet
+    This is a sample snippet from the EVE API XML QuickLook, which holds buy and sell orders for one item.
+    One way to write XMLTABLEs is to copy into the SQL Worksheet a meaningfully long snippet from the source XML
+    as a visual guide to write the path to <elements> (the 'for $i' -clause below) and those COLUMNS -parameters.
+
     <quicklook>
       <item>34</item>
       <itemname>Tritanium</itemname>
@@ -104,20 +122,4 @@
     FROM       market_aggregate agr
     INNER JOIN region           reg ON reg.eveapi_region_id = agr.region
     WHERE  agr.direction = 'BUY';
-
-
-
-
-  -- details on the composite
-  CREATE OR REPLACE VIEW vw_composite AS
-    SELECT *
-    FROM       part      prt
-    INNER JOIN composite cmp ON prt.label = cmp.good;
-    
-
-  -- details on a compositions constituents
-  CREATE OR REPLACE VIEW vw_composition AS
-    SELECT *
-    FROM       composite cmp
-    INNER JOIN part      prt ON prt.label = cmp.part;
     

@@ -61,9 +61,9 @@
             
                                               );
   
-  CREATE INDEX ix_part_class                ON part(class);
-  CREATE INDEX ix_part_material_origin      ON part(material_origin);
-  CREATE INDEX ix_part_eveapi_id            ON part(eveapi_part_id);
+  CREATE INDEX ix_part_class                  ON part(class);
+  CREATE INDEX ix_part_material_origin        ON part(material_origin);
+  CREATE INDEX ix_part_eveapi_id              ON part(eveapi_part_id);
   
   
 
@@ -81,8 +81,8 @@
   
                                              );
 
-  CREATE INDEX ix_composite_good           ON composite(good);
-  CREATE INDEX ix_composite_part           ON composite(part);
+  CREATE INDEX ix_composite_good              ON composite(good);
+  CREATE INDEX ix_composite_part              ON composite(part);
 
 
    
@@ -107,9 +107,9 @@
                                                                                                AND subheader <> part)
                                               );
 
-  CREATE INDEX ix_produce_good             ON produce(good);
-  CREATE INDEX ix_produce_subheader        ON produce(subheader);
-  CREATE INDEX ix_produce_part             ON produce(part);
+  CREATE INDEX ix_produce_good                ON produce(good);
+  CREATE INDEX ix_produce_subheader           ON produce(subheader);
+  CREATE INDEX ix_produce_part                ON produce(part);
 
 
 
@@ -132,10 +132,10 @@
                                                                                                AND quantity > 0
                                                                                                AND min_qty  > 0));
 
-  CREATE INDEX ix_market_order_part      ON market_order(part);
-  CREATE INDEX ix_market_order_direction ON market_order(direction);
-  CREATE INDEX ix_market_order_region    ON market_order(region);
-  CREATE INDEX ix_market_order_system    ON market_order(system_name);
+  CREATE INDEX ix_market_order_part           ON market_order(part);
+  CREATE INDEX ix_market_order_direction      ON market_order(direction);
+  CREATE INDEX ix_market_order_region         ON market_order(region);
+  CREATE INDEX ix_market_order_system         ON market_order(system_name);
 
 
 
@@ -155,12 +155,12 @@
                                              
                                               );
 
-  CREATE INDEX ix_market_aggregate_part      ON market_aggregate(part);
-  CREATE INDEX ix_market_aggregate_direction ON market_aggregate(direction);
-  CREATE INDEX ix_market_aggregate_region    ON market_aggregate(region);
+  CREATE INDEX ix_market_aggregate_part       ON market_aggregate(part);
+  CREATE INDEX ix_market_aggregate_direction  ON market_aggregate(direction);
+  CREATE INDEX ix_market_aggregate_region     ON market_aggregate(region);
   
   -- this function is needed in the most massive queries, lets INDEX that too
-  CREATE INDEX ix_f_market_aggr_notable      ON market_aggregate(price_average * samples);
+  CREATE INDEX ix_f_market_aggr_notable       ON market_aggregate(price_average * samples);
 
 
 

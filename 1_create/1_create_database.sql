@@ -1,7 +1,7 @@
 /*
     As ADMIN: Scripts in this module you have to run as ADMIN (SYS, SYSDBA...)
     Also applies to 2_create_acl.sql and 3_create_wallet.sql
-    Others you may run as the user you CREATE here and GRANT these privilegest for.
+    Others you may run as the user you CREATE here and GRANT these privileges for.
   
     Create Database, Directory for Loader files, Role Developer, User in that Role
 
@@ -21,7 +21,7 @@ DROP TABLESPACE "EVEONLINE" INCLUDING CONTENTS   CASCADE CONSTRAINTS;
 
 -- create dabatase
 CREATE SMALLFILE TABLESPACE EVEONLINE
-DATAFILE '/u01/app/oracle/oradata/orcl/eveonline' -- this path from common tutorials in web
+DATAFILE '/u01/app/oracle/oradata/orcl/eveonline'
 SIZE 512M REUSE AUTOEXTEND ON NEXT 50M MAXSIZE 2024M
 LOGGING
 EXTENT MANAGEMENT LOCAL
@@ -29,9 +29,10 @@ SEGMENT SPACE MANAGEMENT AUTO
 DEFAULT NOCOMPRESS;
 
 
-
--- assuming you sandbox with many projects youd maybe want a role with all needed rights, which you then grant to this User
--- if you dont have it already you can make one now, not sure what rights you be needing... here are some that will be useful
+/*
+    You might want a role with all needed rights, which you then grant to this User, and maybe others.
+    If you dont have it already you can make one now, and here are some that will be useful.
+*/
 CREATE ROLE "DEVELOPER" NOT IDENTIFIED;
 GRANT CREATE INDEXTYPE            TO "DEVELOPER";
 GRANT CREATE JOB                  TO "DEVELOPER";
