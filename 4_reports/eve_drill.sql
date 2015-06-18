@@ -87,7 +87,7 @@ SELECT * FROM cache_asset_list;
 
 
 
--- A producable at Part but not broken into Inputs
+-- A product at Part but not broken into Inputs
   SELECT *
   FROM            part      prt
   LEFT OUTER JOIN composite cmp ON cmp.good = prt.label

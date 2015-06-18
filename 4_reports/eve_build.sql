@@ -1,6 +1,9 @@
 
 /*
     WHAT TO BUILD and where to sell?
+
+    One way to yield on this is to build 5-10 different kinds of products out of those that show higher profits,
+    and keep filling the shelves as they sell. Another valuable info is which products do not seem profitable at the moment.
 */
   SELECT INITCAP(good) AS good, INITCAP(race) AS rc, INITCAP(name_region) AS region
         
@@ -32,7 +35,7 @@
 */
         ,utils.per_cent(p_share    => mid_spread + ((lowest_offer - mid_spread) * :adjust/100) - breakeven
                        ,p_total    => breakeven
-                       ,p_decimals => 1)                                                                    AS margin
+                       ,p_decimals => 1)                                                                  AS margin
 
 
   FROM  (SELECT brk.good, brk.race, sel.name_region, brk.breakeven
@@ -104,11 +107,16 @@
 
 
 /*
-    Whats the BREAKEVEN FOR PRODUCE if all input materials bought at lowest_offer? And from where to buy them cheapest.
+    Whats the BREAKEVEN FOR PRODUCE if all input materials bought low? And from where to buy them cheapest?
 
-    You will want to be MORE Price Sensitive with parts that constitute to higher pct of the goods_total.
+    You will want to be MORE Price Sensitive with materials that constitute to higher pct of the goods_total.
     Also you may make generous profits even if you are LESS price sensitive with the low pct materials.
     Better yet, as these prices actually are high-/low-end ranges, some materials you will likely get even cheaper.
+
+    IMPORTANT NOTE: when building from Blueprint Copies (BPC) the Remaining Runs will ultimately dictate
+    the final material efficiencies, and subsequently the final quantities of required items.
+    Those remaining runs cannot be known here (because at the time of writing EVE API XML does not show it)
+    and so the result will show that much smaller quantities than what is actually required.
 */
   SELECT INITCAP(SUBSTR(good, 1, 22)) AS good, batch AS n, INITCAP(SUBSTR(part, 1, 22)) AS part, INITCAP(origin) AS orig
 
@@ -121,15 +129,15 @@
 
         ,  TO_CHAR(short_volume,           '990G990G990D99') AS vol_short
 
-         -- most matetials you will likely want to haul with your Deep Space Transported (DST), uncomment others as necessary
+         -- most matetials you will likely want to haul with your Deep Space Transporter (DST), uncomment others as necessary
         ,of_cargo_deeptransport                              AS dst -- of_cargo_freighter AS frg, of_cargo_jump_freighter AS jf
         ,  TO_CHAR(offers_low_range,       '990G990G990D99') AS quote
         ,INITCAP(SUBSTR(name_region, 1, 15)                ) AS region
         ,  TO_CHAR(items_total,        '990G990G990G990'   ) AS items_tot
         ,                                                       pct
         ,  TO_CHAR(goods_total,        '990G990G990G990'   ) AS goods_tot
-        ,  TO_CHAR(goods_total * 0.96, '990G990G990G990'   ) AS dscnt_four
-        ,  TO_CHAR(goods_total * 0.93, '990G990G990G990'   ) AS dscnt_seven
+        ,  TO_CHAR(goods_total * 0.96, '990G990G990G990'   ) AS discont_four
+        ,  TO_CHAR(goods_total * 0.93, '990G990G990G990'   ) AS discont_seven
         ,  TO_CHAR(breakeven,          '990G990G990G990'   ) AS break
         ,  TO_CHAR(just_buy_it,        '990G990G990G990'   ) AS just_buy_it
 

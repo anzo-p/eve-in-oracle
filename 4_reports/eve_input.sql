@@ -9,9 +9,9 @@
         ,:buy_local                                                                                  AS loc
         ,INITCAP(          prt.material_origin                                                     ) AS origin
         ,INITCAP(          sel.name_region                                                         ) AS region
-        ,TO_CHAR(                                sel.offers_low_range        ,'990G990G990G990D99' ) AS sellers      -- Carbides and Metamaterials always at their cheapest (total cost %)
-        ,TO_CHAR(                                sel.offers_low_range * 1.02 ,'990G990G990G990D99' ) AS premium_two  -- for others, this tiny Premium is OK when more convenient
-        ,TO_CHAR(                                sel.offers_low_range * 1.04 ,'990G990G990G990D99' ) AS premium_four -- never pay a higher premium than this for any moon mats
+        ,TO_CHAR(                                sel.offers_low_range        ,'990G990G990G990D99' ) AS sellers
+        ,TO_CHAR(                                sel.offers_low_range * 1.02 ,'990G990G990G990D99' ) AS premium_two
+        ,TO_CHAR(                                sel.offers_low_range * 1.04 ,'990G990G990G990D99' ) AS premium_four
         ,TO_CHAR( CEIL(SUM(inp.quantity)                             )       ,'990G990G990G990'    ) AS quantity
         ,TO_CHAR( CEIL(SUM(inp.quantity)       * sel.offers_low_range)       ,'990G990G990G990'    ) AS expense
         ,TO_CHAR( CEIL(SUM(inp.quantity)       * prt.volume          )       ,    '990G990G990'    ) AS volume
@@ -43,7 +43,8 @@
 
 
 /*
-    Give list of Producables and quantity to build for multiple products with different jobs runs.
+    Show me in a Single Query the required materials to build a diverse set of products.
+    (Dont want to do many queries and somehow copy-cahche those results somewhere - what does that even mean?)
 */
   SELECT CASE WHEN :a_list IS NOT NULL THEN :a_qty || 'x{'|| :a_list || '}; ' END ||
          CASE WHEN :b_list IS NOT NULL THEN :b_qty || 'x{'|| :b_list || '}; ' END ||
@@ -122,9 +123,9 @@
 /*
     Illustrate the concept of Practical Price
 
-    Lowest Offer:       lowest price available, though might be only few available and so not very reliable info
-    Best Practical:     a more likely price when you need to buy sufficient quantities to actually build something
-    Offers Low Range:   average out all regions Best Practicals
+    Lowest Offer:          lowest price available, though might be only few available and so not very reliable info
+    Best Practical:        a more likely price when you need to buy sufficient quantities to actually build something
+    Avg Low all regions:   average out all regions Best Practicals
     
     Params, eg.:
       Part:    TRITANIUM

@@ -7,7 +7,7 @@
 
 
     Assumptions:
-    - Oracle 12c database location:   /u01/app/oracle/
+    - Oracle 12c database location:   /u01/app/oracle/     ...at least 11g required for XMLDB to work, 12c seems required for modern SSL Certificates to work
     - current user:                   oracle
     - password for everyting:         SomePasswd123
     - these scripts are at:           /home/oracle/Documents/eve

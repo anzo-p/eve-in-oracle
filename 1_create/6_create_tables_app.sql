@@ -75,7 +75,7 @@
                                              ,CONSTRAINT fk_composite_good              FOREIGN KEY (good)              REFERENCES part(label)
                                              ,CONSTRAINT fk_composite_part              FOREIGN KEY (part)              REFERENCES part(label)
 
-                                             ,CONSTRAINT br_coprise_once_only           UNIQUE (good, part)
+                                             ,CONSTRAINT br_comprise_once_only          UNIQUE (good, part)
                                              ,CONSTRAINT br_finite_composite_loop
                                                 CHECK (good <> part)
   

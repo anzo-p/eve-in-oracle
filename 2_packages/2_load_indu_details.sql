@@ -4,8 +4,8 @@ CREATE OR REPLACE PACKAGE load_indu_details IS
     Inserts data about Parts and the Composition rules over how those parts can be used to build more advanced parts.
     Then uses those data to define all required parts and their quantities in order to build specific Products (table Produce).
 
-    The compositions have something called material_efficiency: a value that decreases the quantities of required parts.
-    And those Material Efficiencies are different for different compositions (called 'Blueprints' in EVE Online).
+    The compositions have something called Material Efficiency: a value that decreases the quantities of required parts.
+    And those material efficiencies are different for different compositions (called 'Blueprints' in EVE Online).
     It is more convenient both programmatically and performancewise to materialise them in advance, before SELECTing.
 
     A little bit unfortuntely, all logics regarding material efficiency cannot be done here, but some will bubble up to SQLs.
@@ -376,9 +376,7 @@ CREATE OR REPLACE PACKAGE BODY load_indu_details AS
                                          ,p_multiplier     IN produce.quantity%TYPE       DEFAULT 1
                                          ,p_multiplier_pos IN produce.quantity_pos%TYPE   DEFAULT 1) AS
 /*
-    THIS Procedure is the most important piece of code!
-    
-    Materializes all required materials (part) for all products (produce).
+    Calculates the true quantities of required materials (part) for all products (produce).
     Correct material efficiency applies to every distinct Industry Job in EVE.
     Recursively drills down on products that are themselves composites of composites.
     Particularly important as products may have different material efficiencies
