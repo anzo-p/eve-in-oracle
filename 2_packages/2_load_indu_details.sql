@@ -448,27 +448,27 @@ CREATE OR REPLACE PACKAGE BODY load_indu_details AS
 -- DEBT: fetches material efficiency each round, which seems valid since we often drill into component compositions, where applicable ME differs, but still there is redundancy
 
 
-          -- List of Goods where 'POS Extra Material Efficiency' does NOT Apply.
-          -- (POS = Player Own Starbase, which has eg. extra bonuses for industry.)
-          IF     a_cmp(ix_cmp).material_origin      IN ('ORE')       OR
-             NVL(r_prt.class, utils.k_dummy_string) IN ('BLUEPRINT') THEN
+          BEGIN
+            SELECT material_efficiency
+            INTO   f_meffic
+            FROM   part
+            WHERE  label = a_cmp(ix_cmp).good;
+    
+            -- List of Goods where 'POS Extra Material Efficiency' does NOT Apply.
+            -- (POS = Player Own Starbase, which has eg. extra bonuses for industry.)
+            IF     a_cmp(ix_cmp).material_origin      IN ('ORE')       OR
+               NVL(r_prt.class, utils.k_dummy_string) IN ('BLUEPRINT') THEN
 
-             f_meffic := 0;
-          ELSE          
-            BEGIN
-              SELECT material_efficiency
-              INTO   f_meffic
-              FROM   part
-              WHERE  label = a_cmp(ix_cmp).good;
-      
+              f_meffic_pos := 0;
+            ELSE
               f_meffic_pos := (1 - (1 - f_meffic             / 100)  -- ME on Blueprint (BPO)
                                   *(1 - k_pos_saves_extra_me / 100)) -- ME on Facility (when POS)
                                *100;
-            EXCEPTION
-              WHEN NO_DATA_FOUND THEN
-                RAISE_APPLICATION_ERROR(-20000, 'MATERIAL EFFICIENCIES may be missing for good: ' || a_cmp(ix_cmp).good || '! or ' || SQLERRM);
-            END;
-          END IF;
+            END IF;
+          EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+              RAISE_APPLICATION_ERROR(-20000, 'MATERIAL EFFICIENCIES may be missing for good: ' || a_cmp(ix_cmp).good || '! or ' || SQLERRM);
+          END;
         END LOOP;
 
 

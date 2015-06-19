@@ -1,0 +1,14 @@
+# To find out much interesting about SQL performance…
+
+# 1 first need to run this with appropriate privileges in eg. SQLDeveloper Worksheet
+# BEGIN EXECUTE IMMEDIATE 'ALTER SESSION SET SQL_TRACE = TRUE'; END; --TRUE FALSE
+
+# 2 then execute your SQLs
+
+# 3 then navigate to those trace files
+cd /u01/app/oracle/diag/rdbms/orcl/orcl/trace/
+# save this file here for guidance in case you happen to return here only much later
+
+# 4 then make the tracefile (*.trc) human readable
+# the filename is just to stand out and that underscore ’_’ will place output file first = easy to find
+tkprof [trace file] _latest.emacs
