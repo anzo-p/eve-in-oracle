@@ -10,13 +10,13 @@ CREATE OR REPLACE PACKAGE load_player_data IS
 
 
 
-  k_location_my_factory          CONSTANT VARCHAR2(10)                        := '12345678'; -- the locationID of your POS here, download XML AssetList manually and deduce from there
+  k_location_my_factory          CONSTANT VARCHAR2(10)                        := '12345678'; -- the locationID of your Factory here (POS or Station), download XML AssetList manually and deduce from there
 
   -- these would belong into loader files, and actually Impel is there already: SELECT * FROM part WHERE label = 'IMPEL'
   k_item_impel                   CONSTANT VARCHAR2(10)                        := '12753';
   k_item_providence              CONSTANT VARCHAR2(10)                        := '20183';
   k_item_ark                     CONSTANT VARCHAR2(10)                        := '28850';
-  -- I like the Amarrian haulers, but ofc any will do, eg.: https://eve-central.com/home/quicklook.html?typeid=12747 <- and thats the tem's typeID right there
+  -- I like the Amarrian haulers, but ofc any will do, eg.: https://eve-central.com/home/quicklook.html?typeid=12747 <- and thats the item's typeID right there
 
 
 
@@ -213,7 +213,7 @@ CREATE OR REPLACE PACKAGE BODY load_player_data AS
                                    SELECT eveapi_item_type_id, quantity -- from my various Ship Cargoes if I maybe havent had time to drop them to factory yet
                                    FROM       tmp_load_assets ast
                                    INNER JOIN TABLE(t_assets) chr ON chr.name = ast.name
-                                   WHERE  ast.char_corp           = 'char'
+                                   WHERE  chr.char_corp           = 'char'
                                    AND    ast.eveapi_loc_type_id IN (load_player_data.v_get('k_item_impel')
                                                                     ,load_player_data.v_get('k_item_providence')
                                                                     ,load_player_data.v_get('k_item_ark')))                                   

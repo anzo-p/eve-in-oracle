@@ -5,7 +5,7 @@
     One way to yield on this is to build 5-10 different kinds of products out of those that show higher profits,
     and keep filling the shelves as they sell. Another valuable info is which products do not seem profitable at the moment.
 */
-  SELECT INITCAP(good) AS good, INITCAP(race) AS rc, INITCAP(name_region) AS region
+  SELECT INITCAP(good) AS good, INITCAP(race) AS race, INITCAP(name_region) AS region
         
         ,            sel_samples                                                                          AS sells
         ,TO_CHAR(                   lowest_offer,                                      '990G990G990G990') AS lowest_offer
@@ -80,12 +80,14 @@
          LEFT OUTER JOIN vw_avg_sells_regions sel ON  sel.part   = brk.good
               INNER JOIN vw_avg_buys_regions  buy ON  buy.part   = brk.good
                                                  AND  buy.region = sel.region
-                                                 
-              -- this is an OUTER JOIN in disguise, since parameter may be null
-              INNER JOIN local_regions        loc ON (loc.region = sel.region  OR :local_sell IS NULL) 
 
+         LEFT OUTER JOIN local_regions        loc ON  loc.region = sel.region
+         
 
-         WHERE ((    ( buy.bids_high_range * buy.samples      > load_market_data.f_get('k_notable_demand_good')   )
+         WHERE  (      loc.region                            IS NOT NULL
+                 OR   :local_sell                            IS NULL)
+
+         AND   ((    ( buy.bids_high_range * buy.samples      > load_market_data.f_get('k_notable_demand_good')   )
                  AND ( brk.breakeven       / buy.highest_bid <  load_market_data.f_get('k_buys_max_below_break')  )
                  AND ( sel.lowest_offer    / brk.breakeven    > load_market_data.f_get('k_sells_min_above_break') )
                 )

@@ -32,6 +32,7 @@ CREATE OR REPLACE PACKAGE load_market_data IS
                                                                                || '&'||'regionlimit=10000064'  -- Essence
                                                                                || '&'||'regionlimit=10000037'  -- Everyshore
                                                                                || '&'||'regionlimit=10000067'  -- Genesis
+                                                                               || '&'||'regionlimit=10000048'  -- Placid
                                                                                || '&'||'regionlimit=10000068'  -- Verge Vendor
                                                                                
                                                                                -- Trade Hub Regions

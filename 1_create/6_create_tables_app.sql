@@ -1,6 +1,22 @@
 
 /*
+    Table PART represents an Item in EVE Online, like spaceship, or components to build the ship, or materials to build the components.
 
+    Table Composite implements rules to tells which parts in which quantities are required to make other, more advanced parts.
+    One row links two Parts together and thus creates web of parts. However, the loader file, whose contents will be loaded up
+    into table composite, must be populated as a tree. This will be checked.
+
+    Table Produce holds all parts and intermediary components needed in all industry jobs required to build a final product.
+    A product that itself is no longer a part of a more advanced part. The Column Good is 'the Root part in this Tree of parts'.
+    This table will be populated computationally out of Parts and their Composition rules. The table has constraints that
+    only accepts data that comply to a tree structure of parts.
+
+    Table Market_order holds Sell and Buy orders for some quantity of a part somewhere in the galaxy.
+
+    Table Market_aggregate is an attempt to make regionwise sums for more realistic information on those market orders.
+
+    Table local_regions holds the regions that you define local (at eve_drill.sql) and allows to filter market data down
+    to more convenient traveling distances.
 */
 
 
