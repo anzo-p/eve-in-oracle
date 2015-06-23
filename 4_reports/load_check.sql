@@ -1,3 +1,8 @@
+/*
+    First is the script to Initiaize / Reload / Refresh all data.
+    Further below also some checks on how things went.
+*/
+
 
 -- REFRESH ALL DATA
 BEGIN
@@ -16,6 +21,7 @@ BEGIN
 
     BEGIN
       -- BEGIN load_market_data.load_prices(24700, 0.5); END; -- DEBUG with one items market data
+      
       load_market_data.submit_price_jobs(p_local_regions  => 'VERGE VENDOR GENESIS ESSENCE EVERYSHORE SINQ LAISON PLACID THE CITADEL' -- define your local regions
                                         ,p_security_limit => 0.5);
 
@@ -81,8 +87,9 @@ SELECT * FROM cache_asset_list;
 -- Quickly browse on anything at Input
   SELECT *
   FROM   produce
-  WHERE  good       = 'ISHTAR'
-  AND    transitive = 'FALSE'
+  WHERE  good       = 'PILGRIM'
+  --AND    transitive = 'FALSE'
+  ORDER BY good, subheader, part
   ;
 
 

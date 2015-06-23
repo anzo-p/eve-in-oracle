@@ -1,3 +1,7 @@
+/*
+    These Queries are meant to help decide what Proucts to Manufacture.
+*/
+
 
 /*
     WHAT TO BUILD and where to sell?
@@ -5,7 +9,7 @@
     One way to yield on this is to build 5-10 different kinds of products out of those that show higher profits,
     and keep filling the shelves as they sell. Another valuable info is which products do not seem profitable at the moment.
 */
-  SELECT INITCAP(good) AS good, INITCAP(race) AS race, INITCAP(name_region) AS region
+  SELECT INITCAP(good) AS good, INITCAP(race) AS rc, INITCAP(name_region) AS region
         
         ,            sel_samples                                                                          AS sells
         ,TO_CHAR(                   lowest_offer,                                      '990G990G990G990') AS lowest_offer

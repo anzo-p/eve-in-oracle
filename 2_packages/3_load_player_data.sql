@@ -1,23 +1,16 @@
 CREATE OR REPLACE PACKAGE load_player_data IS
 
-/*
-    Access EVE API XML for player data. Currently only getting the AssetList owned by Player/Corporation.
 
-    Must read:
-      https://developers.eveonline.com/resource/xml-api
-      http://wiki.eve-id.net/APIv2_Page_Index
+/*
+    Access EVE API XML for player data. Currently only getting the assets owned by Player/Corporation.
 */
 
-
-
-  k_location_my_factory          CONSTANT VARCHAR2(10)                        := '12345678'; -- the locationID of your Factory here (POS or Station), download XML AssetList manually and deduce from there
+--  k_loc_my_pos                   CONSTANT VARCHAR2(10)                        := '12345678'; -- the locationID of your POS here, download XML AssetList manually and deduce from there
 
   -- these would belong into loader files, and actually Impel is there already: SELECT * FROM part WHERE label = 'IMPEL'
   k_item_impel                   CONSTANT VARCHAR2(10)                        := '12753';
   k_item_providence              CONSTANT VARCHAR2(10)                        := '20183';
   k_item_ark                     CONSTANT VARCHAR2(10)                        := '28850';
-  -- I like the Amarrian haulers, but ofc any will do, eg.: https://eve-central.com/home/quicklook.html?typeid=12747 <- and thats the item's typeID right there
-
 
 
   -- here you put the access parameters required to get your Secured player data from EVE Online.
@@ -168,12 +161,8 @@ CREATE OR REPLACE PACKAGE BODY load_player_data AS
   
         --LEFT OUTER JOIN part prt ON prt.eveapi_part_id = cld.type_id -- DEBUG
         INNER JOIN part prt ON prt.eveapi_part_id = cld.type_id
-  
-        WHERE     cch.corp_char_name    =   r_chr.name
-        AND   (   prt.material_origin  IN ('ICE', 'MINERAL', 'PLANET', 'MOON')
-               OR prt.class            IN ('DATACORE', 'DECRYPTOR')
-               OR prt.class          LIKE  'COMPONENT%');
-
+        WHERE     cch.corp_char_name    =   r_chr.name;
+        
     END LOOP;
       
 
@@ -185,7 +174,7 @@ CREATE OR REPLACE PACKAGE BODY load_player_data AS
                  ,NVL(sel.quantity, 0)   AS quantity
 
 /*
-           The XML AssetList only includes items that the character currently has,
+           The EVE API XML AssetList only includes items that the character currently has,
            meaning the XML will NOT notify us that the character 'no longer' has any of it.
            Still we Must then UPDATE part.pile = 0 for the final reports to work:
 
@@ -206,14 +195,14 @@ CREATE OR REPLACE PACKAGE BODY load_player_data AS
                                    FROM       tmp_load_assets ast
                                    INNER JOIN TABLE(t_assets) chr ON chr.name = ast.name
                                    WHERE  chr.char_corp           = 'corp'
-                                   AND    ast.eveapi_location_id  =  load_player_data.v_get('k_location_my_factory') -- if you copy this SQL out and DEBUG, it helps to have the v_get():s
+                                   AND    ast.eveapi_location_id  =  load_player_data.v_get('k_loc_my_pos') -- if you copy this SQL out and DEBUG, it helps to have the v_get():s
                                    
                                    UNION ALL
 
                                    SELECT eveapi_item_type_id, quantity -- from my various Ship Cargoes if I maybe havent had time to drop them to factory yet
-                                   FROM       tmp_load_assets ast
+                                   FROM   tmp_load_assets ast
                                    INNER JOIN TABLE(t_assets) chr ON chr.name = ast.name
-                                   WHERE  chr.char_corp           = 'char'
+                                   WHERE  ast.name                = 'char'
                                    AND    ast.eveapi_loc_type_id IN (load_player_data.v_get('k_item_impel')
                                                                     ,load_player_data.v_get('k_item_providence')
                                                                     ,load_player_data.v_get('k_item_ark')))                                   

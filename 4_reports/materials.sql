@@ -1,32 +1,61 @@
+/*
+    These Queries are meant to help when hunting for Bargain Materials.
+    How much will be neeed and from where to get them?
+*/
+
 
 /*
     What's the CHEAPest Region for HIGH FLOW items?
-    Everyone needs these input, incl. arbitrageurs, who might then become our customers.
+    Everyone needs these input, incl. arbitrageurs, who might then become our customers.    
+
+    Also show how
+    - This Region   compares of % to  Query Result  (when :region set to current region)
+    - Query Result  compares of % to  Best Price in know EVE Universe
 */
-  SELECT INITCAP(          prt.label                                                               ) AS part
-        ,INITCAP(          prt.race                                                                ) AS race
-        ,TO_CHAR(          prt.pile                                          ,'990G990G990G990'    ) AS pile
-        ,:buy_local                                                                                  AS loc
-        ,INITCAP(          prt.material_origin                                                     ) AS origin
-        ,INITCAP(          sel.name_region                                                         ) AS region
-        ,TO_CHAR(                                sel.offers_low_range        ,'990G990G990G990D99' ) AS sellers
-        ,TO_CHAR(                                sel.offers_low_range * 1.02 ,'990G990G990G990D99' ) AS premium_two
-        ,TO_CHAR(                                sel.offers_low_range * 1.04 ,'990G990G990G990D99' ) AS premium_four
-        ,TO_CHAR( CEIL(SUM(inp.quantity)                             )       ,'990G990G990G990'    ) AS quantity
-        ,TO_CHAR( CEIL(SUM(inp.quantity)       * sel.offers_low_range)       ,'990G990G990G990'    ) AS expense
-        ,TO_CHAR( CEIL(SUM(inp.quantity)       * prt.volume          )       ,    '990G990G990'    ) AS volume
+  SELECT INITCAP(          prt.label                                                                ) AS part
+        ,INITCAP(          prt.race                                                                 ) AS race
+        ,:buy_local                                                                                   AS loc
+        ,INITCAP(          prt.material_origin                                                      ) AS origin
+        ,INITCAP(          sel.name_region                                                          ) AS region
+        ,TO_CHAR(                                 sel.offers_low_range        ,'990G990G990G990D99' ) AS sellers
+ 
+         -- how do prices compare against best in known EVE Universe (%)?
+        ,(SELECT TO_CHAR(TRUNC(sel.offers_low_range / bgn.offers_low_range *100)) || '% ' || INITCAP(bgn.name_region)
+          FROM   vw_avg_sells_regions bgn
+          WHERE  bgn.part             =  prt.label
+          AND    bgn.offers_low_range = (SELECT MIN(sub.offers_low_range)
+                                         FROM   vw_avg_sells_regions sub
+                                         WHERE  sub.part = bgn.part)
+          AND    ROWNUM               =  1)                                                           AS of_best_buy
+
+         -- "Since I am currently flying at :region", how do these local prices compare?
+        ,(SELECT TO_CHAR(TRUNC(sub.offers_low_range / sel.offers_low_range *100)) || '% ' || INITCAP(sub.name_region)
+          FROM   vw_avg_sells_regions sub
+          WHERE  sub.part             =  prt.label
+          AND    sub.name_region   LIKE '%'|| UPPER(:region) ||'%'
+          AND    ROWNUM               =  1)                                                           AS of_region
+
+        ,TO_CHAR(                                 sel.offers_low_range * 1.02 ,'990G990G990G990D99' ) AS premium_two
+        ,TO_CHAR(                                 sel.offers_low_range * 1.04 ,'990G990G990G990D99' ) AS premium_four
+/*
+         What Quantities, Expenses, and Cargo Spaces involved if we build one piece out of every product that we have preset?
+         Gives a loose idea on the expected material flows, which the Industrialist ought to assume constant over time
+*/
+        ,TO_CHAR( CEIL(SUM(inp.quantity)                              )       ,'990G990G990G990'    ) AS quantity
+        ,TO_CHAR( CEIL(SUM(inp.quantity)        * sel.offers_low_range)       ,'990G990G990G990'    ) AS expense
+        ,TO_CHAR( CEIL(SUM(inp.quantity)        * prt.volume          )       ,    '990G990G990'    ) AS volume
+        ,TO_CHAR(          prt.pile                                           ,'990G990G990G990'    ) AS pile
 
   FROM            part                 prt
        INNER JOIN vw_avg_sells_regions sel ON sel.part = prt.label
   LEFT OUTER JOIN produce              inp ON inp.part = prt.label -- give all items, regadrless whether decided to use in prod, like Planetary and Moon Materials and Decryptors
 
-  WHERE      sel.offers_low_range * sel.samples >  load_market_data.v_get('k_notable_supply_part')
-  
-  AND   (    inp.part                          IS  NOT NULL                          OR :every  IS NOT NULL)  
-  AND   (    prt.material_origin             LIKE  '%'|| UPPER(:origin) ||'%'        OR :origin IS NULL)
-  AND   (    prt.class                       LIKE  '%'|| UPPER(:class)  ||'%'        OR :class  IS NULL)
+  WHERE  NVL(prt.material_origin, 'A')   NOT LIKE 'PRODUCE'
+  AND        sel.offers_low_range * sel.samples >  load_market_data.v_get('k_notable_supply_part')
 
-  AND    NVL(prt.material_origin, 'A')   NOT LIKE 'PRODUCE'
+  AND   (    0                                  < INSTR(UPPER(:origin), prt.material_origin)   OR :origin IS NULL)
+  AND   (    prt.class                       LIKE  '%'|| UPPER(:class)  ||'%'                  OR :class  IS NULL)
+  AND   (    inp.part                          IS  NOT NULL                                    OR :every  IS NOT NULL)  
 
   AND        0                                  =   INSTR(NVL(UPPER(:exclude), utils.v_get('k_dummy_string'))
                                                              ,prt.label)
@@ -151,3 +180,15 @@
   
   ORDER BY part                ASC
           ,avg_low_all_regions ASC;
+
+
+
+
+SELECT *
+FROM   market_order
+WHERE  part      = 'LIQUID OZONE'
+AND    direction = 'SELL'
+AND    region    = (SELECT eveapi_region_id FROM region
+                    WHERE  name_region = 'EVERYSHORE')
+ORDER BY price ASC;
+                 

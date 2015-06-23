@@ -393,6 +393,18 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
       VALUES (ins.item_type_id, ins.cached_until, ins.xdoc);
       
 
+/*
+    Dont want to know the history (for now), only need latest quotations.
+    See if an otherwise quiet station had some for sale and those are sold,
+    that quotation would have to be deliberately deleted/invalidated for this to work.
+    
+    Still must DELETE one by one as they are also refreshed one by one.
+    And the orders to be refreshed are based on Caching Rules anyways.
+*/
+    DELETE FROM market_order
+    WHERE  part = v_label;
+
+
 ---- INSERT FROM local XML INTO local database
     OPEN  c_sells(p_eveapi_part_id);
     FETCH c_sells BULK COLLECT INTO a_sells;
@@ -473,14 +485,6 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
   BEGIN
 
     set_local_regions(p_local_regions);
-
-
-/*
-    Dont want to know the history (for now), only need latest quotations.
-    See if an otherwise quiet station had some for sale and those are sold,
-    that quotation would have to be deliberately deleted/invalidated for this to work.
-*/
-    DELETE FROM market_order;
 
 
 /*
