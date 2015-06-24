@@ -4,7 +4,7 @@
 
     Also
     - how this Region   compares to  Query Result  (when :region set to current region)
-    - how Query Result  compares to  Best Price in know EVE Universe
+    - how Query Result  compares to  Best Price in known EVE Universe
     As % since it helps better to compare/estimate Profit Margins
 */
   SELECT INITCAP(          prt.label                                                                ) AS part

@@ -1,0 +1,65 @@
+ label                                                                            ,  race                ,  class                                  , tech ,  origin    ,       volume  ,   eveapi_id  , material_efficiency
+
+
+All items that goes as input into building a Pilgrim must be here:
+- the materials to build all intermediary components
+- those intermediary components themselves
+- all materials required to invent Pilgrim BPCs
+- that Blueprint Copy itself
+- and the Pilgrim itself too
+
+
+
+The minerals are needed to build those Robotic Assembly Arrays (R.A.M *) and the Arbitrator (And the mineral Morphite goes directly into that Pilgrim)
+"ISOGEN"                                                                          , ""                   , ""                                      ,      , "MINERAL"  ,        "0.01" ,         "37" ,   ""
+"MEGACYTE"                                                                        , ""                   , ""                                      ,      , "MINERAL"  ,        "0.01" ,         "40" ,   ""
+"MEXALLON"                                                                        , ""                   , ""                                      ,      , "MINERAL"  ,        "0.01" ,         "36" ,   ""
+"MORPHITE"                                                                        , ""                   , ""                                      ,      , "MINERAL"  ,        "0.01" ,      "11399" ,   ""
+"NOCXIUM"                                                                         , ""                   , ""                                      ,      , "MINERAL"  ,        "0.01" ,         "38" ,   ""
+"PYERITE"                                                                         , ""                   , ""                                      ,      , "MINERAL"  ,        "0.01" ,         "35" ,   ""
+"TRITANIUM"                                                                       , ""                   , ""                                      ,      , "MINERAL"  ,        "0.01" ,         "34" ,   ""
+"ZYDRINE"                                                                         , ""                   , ""                                      ,      , "MINERAL"  ,        "0.01" ,         "39" ,   ""
+
+"R.A.M.- STARSHIP TECH"                                                           , ""                   , ""                                      ,      , "PRODUCE"  ,        "0.04" ,           "" ,  "9"
+
+"ARBITRATOR"                                                                      , "AMARR"              , "SHIP - CRUISER"                        ,  "1" , "PRODUCE"  ,    "10000"    ,        "628" , "10"
+
+
+Datacores and the optional Decryptor to Invent a Pilgrim
+"ELECTRONIC ENGINEERING"                                                          , ""                   , "DATACORE"                              ,      , "MARKET"   ,        "0.1"  ,      "20418" ,   ""
+"AMARRIAN STARSHIP ENGINEERING"                                                   , "CALDARI"            , "DATACORE"                              ,      , "MARKET"   ,        "0.1"  ,      "20421" ,   ""
+"ACCELERANT DECRYPTOR"                                                            , ""                   , "DECRYPTOR"                             ,      , "MARKET"   ,        "1"    ,      "34201" ,   ""
+
+"PILGRIM BLUEPRINT COPY"                                                          , "AMARR"              , "BLUEPRINT"                             ,      , "INVENT"   ,        "0"    ,           "" ,   ""
+As for the Decryptor we suggest you do your own math of which one Youd like the best
+
+
+
+The moon materials involved to build those intermediary components
+"TUNGSTEN CARBIDE"                                                                , "AMARR"              , "ADVANCED"                              ,      , "MOON"     ,        "0.01" ,      "16672" ,   ""
+"TERAHERTZ METAMATERIALS"                                                         , "AMARR"              , "ADVANCED"                              ,      , "MOON"     ,        "1"    ,      "33360" ,   ""
+"FERMIONIC CONDENSATES"                                                           , ""                   , "ADVANCED"                              ,      , "MOON"     ,        "1.3"  ,      "17317" ,   ""
+"FERROGEL"                                                                        , ""                   , "ADVANCED"                              ,      , "MOON"     ,        "1"    ,      "16683" ,   ""
+"FULLERIDES"                                                                      , ""                   , "ADVANCED"                              ,      , "MOON"     ,        "0.15" ,      "16679" ,   ""
+"HYPERSYNAPTIC FIBERS"                                                            , ""                   , "ADVANCED"                              ,      , "MOON"     ,        "0.6"  ,      "16682" ,   ""
+"NANOTRANSISTORS"                                                                 , ""                   , "ADVANCED"                              ,      , "MOON"     ,        "0.25" ,      "16681" ,   ""
+"PHENOLIC COMPOSITES"                                                             , ""                   , "ADVANCED"                              ,      , "MOON"     ,        "0.2"  ,      "16680" ,   ""
+"SYLRAMIC FIBERS"                                                                 , ""                   , "ADVANCED"                              ,      , "MOON"     ,        "0.05" ,      "16678" ,   ""
+
+"ANTIMATTER REACTOR UNIT"                                                         , "AMARR"              , "COMPONENT - POWERGRID"                 ,      , "PRODUCE"  ,        "1"    ,      "11549" , "10"
+"NANOELECTRICAL MICROPROCESSOR"                                                   , "AMARR"              , "COMPONENT - CPU"                       ,      , "PRODUCE"  ,        "1"    ,      "11539" , "10"
+"TESSERACT CAPACITOR UNIT"                                                        , "AMARR"              , "COMPONENT - CAPACITOR"                 ,      , "PRODUCE"  ,        "1"    ,      "11554" , "10"
+"TUNGSTEN CARBIDE ARMOR PLATE"                                                    , "AMARR"              , "COMPONENT - ARMOR"                     ,      , "PRODUCE"  ,        "1"    ,      "11543" , "10"
+"LINEAR SHIELD EMITTER"                                                           , "AMARR"              , "COMPONENT - SHIELD"                    ,      , "PRODUCE"  ,        "1"    ,      "11557" , "10"
+"FUSION THRUSTER"                                                                 , "AMARR"              , "COMPONENT - PROPULSION"                ,      , "PRODUCE"  ,        "1"    ,      "11532" , "10"
+"RADAR SENSOR CLUSTER"                                                            , "AMARR"              , "COMPONENT - SENSOR"                    ,      , "PRODUCE"  ,        "1"    ,      "11537" , "10"
+
+
+Finally that Pilgrim
+"PILGRIM"                                                                         , "AMARR"              , "SHIP - RECON SHIP"                     ,  "2" , "PRODUCE"  ,    "10000"    ,      "11965" ,  "4"
+
+
+What a pain to manually write all these lines like this?
+Except that once theyre here they may be forever and we can reload them into the system any number of times we need or want.
+And whats more, changing even one value here will surely propagate into the system even if that value is set to/from NULL
+WOW!
