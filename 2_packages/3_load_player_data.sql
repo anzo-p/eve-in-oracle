@@ -3,14 +3,19 @@ CREATE OR REPLACE PACKAGE load_player_data IS
 
 /*
     Access EVE API XML for player data. Currently only getting the assets owned by Player/Corporation.
+
+    Must read:
+      https://developers.eveonline.com/resource/xml-api
+      http://wiki.eve-id.net/APIv2_Page_Index
 */
 
---  k_loc_my_pos                   CONSTANT VARCHAR2(10)                        := '12345678'; -- the locationID of your POS here, download XML AssetList manually and deduce from there
+  k_loc_my_pos                   CONSTANT VARCHAR2(10)                        := '12345678'; -- the locationID of your POS here, download XML AssetList manually and deduce from there
 
   -- these would belong into loader files, and actually Impel is there already: SELECT * FROM part WHERE label = 'IMPEL'
   k_item_impel                   CONSTANT VARCHAR2(10)                        := '12753';
   k_item_providence              CONSTANT VARCHAR2(10)                        := '20183';
   k_item_ark                     CONSTANT VARCHAR2(10)                        := '28850';
+  -- I like the Amarrian haulers, but ofc any will do, eg.: https://eve-central.com/home/quicklook.html?typeid=12747 <- and thats the item's typeID right there
 
 
   -- here you put the access parameters required to get your Secured player data from EVE Online.
@@ -161,7 +166,7 @@ CREATE OR REPLACE PACKAGE BODY load_player_data AS
   
         --LEFT OUTER JOIN part prt ON prt.eveapi_part_id = cld.type_id -- DEBUG
         INNER JOIN part prt ON prt.eveapi_part_id = cld.type_id
-        WHERE     cch.corp_char_name    =   r_chr.name;
+        WHERE   cch.corp_char_name = r_chr.name;
         
     END LOOP;
       
@@ -213,7 +218,7 @@ CREATE OR REPLACE PACKAGE BODY load_player_data AS
     
     WHEN MATCHED THEN
       UPDATE
-      SET        prt.pile      =     ins.quantity
+      SET    prt.pile = ins.quantity
       
     -- WHEN NOT MATCHED THEN NO ACTION
     ;

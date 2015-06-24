@@ -1,9 +1,4 @@
 /*
-    These Queries are meant to help decide what Proucts to Manufacture.
-*/
-
-
-/*
     WHAT TO BUILD and where to sell?
 
     One way to yield on this is to build 5-10 different kinds of products out of those that show higher profits,

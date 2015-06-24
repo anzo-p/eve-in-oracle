@@ -1,9 +1,3 @@
-/*
-    First is the script to Initiaize / Reload / Refresh all data.
-    Further below also some checks on how things went.
-*/
-
-
 -- REFRESH ALL DATA
 BEGIN
   BEGIN

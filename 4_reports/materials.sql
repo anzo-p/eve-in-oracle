@@ -1,16 +1,11 @@
 /*
-    These Queries are meant to help when hunting for Bargain Materials.
-    How much will be neeed and from where to get them?
-*/
-
-
-/*
     What's the CHEAPest Region for HIGH FLOW items?
     Everyone needs these input, incl. arbitrageurs, who might then become our customers.    
 
-    Also show how
-    - This Region   compares of % to  Query Result  (when :region set to current region)
-    - Query Result  compares of % to  Best Price in know EVE Universe
+    Also
+    - how this Region   compares to  Query Result  (when :region set to current region)
+    - how Query Result  compares to  Best Price in know EVE Universe
+    As % since it helps better to compare/estimate Profit Margins
 */
   SELECT INITCAP(          prt.label                                                                ) AS part
         ,INITCAP(          prt.race                                                                 ) AS race
@@ -33,7 +28,7 @@
           FROM   vw_avg_sells_regions sub
           WHERE  sub.part             =  prt.label
           AND    sub.name_region   LIKE '%'|| UPPER(:region) ||'%'
-          AND    ROWNUM               =  1)                                                           AS of_region
+          AND    ROWNUM               =  1)                                                           AS this_region
 
         ,TO_CHAR(                                 sel.offers_low_range * 1.02 ,'990G990G990G990D99' ) AS premium_two
         ,TO_CHAR(                                 sel.offers_low_range * 1.04 ,'990G990G990G990D99' ) AS premium_four
