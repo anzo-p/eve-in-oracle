@@ -1,4 +1,3 @@
-
 /*
     All Regions in EVE Online
 */

@@ -2,10 +2,10 @@ CREATE OR REPLACE PACKAGE load_market_data IS
 
 
 /*
+    https://eve-central.com
+
     This site ofers these same prices online, one item at a time though.
     May double-check to verify whether this code fetches the prices correctly.
-
-    https://eve-central.com
 */
 
 
@@ -13,7 +13,7 @@ CREATE OR REPLACE PACKAGE load_market_data IS
 --- Realism Rules -------------------------------------
   k_practical_demand_range       CONSTANT BINARY_DOUBLE                     := 2 *1000 *1000 *1000; -- iskworth of Purchase Orders to aggregate an AVG for a more realistic Best Price
   k_practical_supply_range       CONSTANT BINARY_DOUBLE                     := 2 *1000 *1000 *1000; -- iskworth of Sell Orders...
-  k_notable_demand_good          CONSTANT BINARY_DOUBLE                     :=     300 *1000 *1000; -- minimum iskworth of Purchase Orders up for a considerable opportunity/yield
+  k_notable_demand_good          CONSTANT BINARY_DOUBLE                     :=     200 *1000 *1000; -- minimum iskworth of Purchase Orders up for a considerable opportunity/yield
   k_notable_supply_part          CONSTANT BINARY_DOUBLE                     :=      20 *1000 *1000; -- minimum iskwort of Sales Orders to justify the traveling
 
   k_buys_max_below_break         CONSTANT NUMBER                            := 1 + 20/100;          -- max proximity of highest bid to breakeven, %
@@ -67,7 +67,7 @@ CREATE OR REPLACE PACKAGE load_market_data IS
 
   FUNCTION  get_breakeven                 (p_param             IN NUMBER)                                                 RETURN NUMBER;
 
-  FUNCTION  get_econ_region               (p_part                 market_aggregate.part%TYPE
+  FUNCTION  get_econ_region               (p_part_id              market_aggregate.part_id%TYPE
                                           ,p_direction            market_aggregate.direction%TYPE
                                           ,p_local_regions        VARCHAR2)                                               RETURN market_aggregate.region%TYPE   RESULT_CACHE;
 
@@ -124,14 +124,14 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
 
 
 
-  FUNCTION get_econ_region(p_part          market_aggregate.part%TYPE
+  FUNCTION get_econ_region(p_part_id       market_aggregate.part_id%TYPE
                           ,p_direction     market_aggregate.direction%TYPE
                           ,p_local_regions VARCHAR2)
 
   RETURN market_aggregate.region%TYPE   RESULT_CACHE RELIES_ON (market_aggregate, local_regions) AS
 /*
     Get the cheapest region to buy part. The need for this query came from the heaviest SQLs.
-    Putting functions into SQL tempted me to Cache the Result to ptomote performance:
+    Putting functions into SQL tempted me to Cache the Result to promote performance:
     the call Parameters and the Return Value will be stored in RAM memory from where it is
     accesible superfast, until the tables defined at the RELIES_ON list change.
 */
@@ -147,7 +147,7 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
 
            FROM   market_aggregate sub
            WHERE  sub.direction    =  p_direction
-           AND    sub.part         =  p_part
+           AND    sub.part_id      =  p_part_id
 
           -- pre-selected OR all regions
            AND   (sub.region      IN (SELECT loc.region
@@ -171,7 +171,7 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
 
 
 
-  PROCEDURE merge_market_aggregate(p_part      IN part.label%TYPE
+  PROCEDURE merge_market_aggregate(p_part_id   IN part.ident%TYPE
                                   ,p_direction IN market_order.direction%TYPE) AS
 /*
    IMPORTANT: Assume you need a quantity of 10,000 (ten thousand) of and Item.
@@ -182,7 +182,6 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
    beginning from the Lowest (or Highest) and then divide the Total Price with the Quantity.
 */
 
-
     n_quantity      market_aggregate.samples%TYPE;
     f_top_price     market_aggregate.price_average%TYPE;
     f_avg_price     market_aggregate.price_average%TYPE;
@@ -192,22 +191,25 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
 
     FOR r_reg IN (SELECT DISTINCT region
                   FROM   market_order
-                  WHERE  direction = p_direction
-                  AND    part      = p_part) LOOP
+                  WHERE  part_id   = p_part_id
+                  AND    direction = p_direction) LOOP
 
       f_top_price := NULL;
       f_avg_price := 0;
       n_quantity  := 0;
         
 
-      FOR r_ord IN (SELECT part, direction, region, quantity, price
+      FOR r_ord IN (SELECT direction
+                          ,region
+                          ,quantity
+                          ,price
                     FROM   market_order
-                    WHERE  direction = p_direction
-                    AND    part      = p_part
+                    WHERE  part_id   = p_part_id
+                    AND    direction = p_direction
                     AND    region    = r_reg.region
                     ORDER BY CASE WHEN p_direction = 'SELL' THEN price END ASC
                             ,CASE WHEN p_direction = 'BUY'  THEN price END DESC
-                            ) LOOP
+                    ) LOOP
 
         IF f_top_price IS NULL THEN
           f_top_price := r_ord.price;
@@ -246,15 +248,15 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
 
         MERGE INTO market_aggregate agr
         
-        USING (SELECT p_part       AS part
-                     ,p_direction  AS direction
-                     ,r_reg.region AS region
-                     ,n_quantity   AS samples
-                     ,f_top_price  AS price_top
-                     ,f_avg_price  AS price_average
+        USING (SELECT p_part_id     AS part_id
+                     ,p_direction   AS direction
+                     ,r_reg.region  AS region
+                     ,n_quantity    AS samples
+                     ,f_top_price   AS price_top
+                     ,f_avg_price   AS price_average
                FROM   dual) ins
                
-        ON (    agr.part      = ins.part
+        ON (    agr.part_id   = ins.part_id
             AND agr.direction = ins.direction
             AND agr.region    = ins.region)
         
@@ -270,8 +272,8 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
           OR     NVL(agr.price_average, utils.k_dummy_number) <> NVL(ins.price_average, utils.k_dummy_number)
         
         WHEN NOT MATCHED THEN
-          INSERT (part, direction, region, samples, price_top, price_average, time_quotes_exec)
-          VALUES (ins.part, ins.direction, ins.region, ins.samples, ins.price_top, ins.price_average, SYSTIMESTAMP);
+          INSERT (part_id, direction, region, samples, price_top, price_average, time_quotes_exec)
+          VALUES (ins.part_id, ins.direction, ins.region, ins.samples, ins.price_top, ins.price_average, SYSTIMESTAMP);
 
       END IF;
     END LOOP;
@@ -340,17 +342,18 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
     a_pieces                     utl_http.html_pieces;
     x_doc                        XMLTYPE;
     ts_cached_until              TIMESTAMP;
-    v_label                      part.label%TYPE;
+    
+    n_part_id                    part.ident%TYPE;
 
   BEGIN
 
-    SELECT label
-    INTO   v_label
+    SELECT ident
+    INTO   n_part_id
     FROM   part
-    WHERE  eveapi_part_id  = p_eveapi_part_id;
+    WHERE  eveapi_part_id = p_eveapi_part_id;
     -- EXCEPTION WHEN NO_DATA_FOUND THEN JUST DIE VOCALLY
-    
 
+    
     v_url    :=         k_url_head            ||
                 TO_CHAR(p_eveapi_part_id)     ||
                         k_regions_of_interest;
@@ -403,7 +406,7 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
     And the orders to be refreshed are based on Caching Rules anyways.
 */
     DELETE FROM market_order
-    WHERE  part = v_label;
+    WHERE  part_id = n_part_id;
 
 
 
@@ -418,12 +421,12 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
                    
         INSERT INTO market_order
         (
-          part, direction, system_name, region, price
+          part_id, direction, system_name, region, price
          ,quantity, min_qty, expires, time_quotes_exec
          
         ) VALUES (
         
-          v_label, 'SELL', a_sells(i).stellar_sys, a_sells(i).region, a_sells(i).price
+          n_part_id, 'SELL', a_sells(i).stellar_sys, a_sells(i).region, a_sells(i).price
          ,a_sells(i).vol_remain, a_sells(i).min_volume, a_sells(i).expires, SYSTIMESTAMP
         );
     END IF;
@@ -440,22 +443,22 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
                    
         INSERT INTO market_order
         (
-          part, direction, system_name, region, price
+          part_id, direction, system_name, region, price
          ,quantity, min_qty, expires, time_quotes_exec
          
         ) VALUES (
         
-           v_label, 'BUY', a_buys(i).stellar_sys, a_buys(i).region, a_buys(i).price
+           n_part_id, 'BUY', a_buys(i).stellar_sys, a_buys(i).region, a_buys(i).price
           ,a_buys(i).vol_remain, a_buys(i).min_volume, a_buys(i).expires, SYSTIMESTAMP
         );
     END IF;
 
 
 ------ CALCULATE AVGs
-    merge_market_aggregate(p_part      => v_label
+    merge_market_aggregate(p_part_id   => n_part_id
                           ,p_direction => 'SELL');
                             
-    merge_market_aggregate(p_part      => v_label
+    merge_market_aggregate(p_part_id   => n_part_id
                           ,p_direction => 'BUY');
 
 
@@ -491,7 +494,7 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
 
 /*
     Oracle dbms Jobs are a handy way to use Concurrency to promote Performance,
-    especially is you spread the jobs out in time, so not to choke your host machines resources.
+    especially if we spread the jobs out in time, so not to choke our host machines resources.
 */
     FOR r_job IN (SELECT --sel.label
                          sel.eveapi_part_id
@@ -507,7 +510,7 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
 /*                               
                                 Every N jobs push one second further
 
-                                Be advised: EVE Online API Politics states max 30 requests per second (at the time of writing)
+                                Be advised: EVE Online API Policy states max 30 requests per second (at the time of writing)
                                 OR run the risk of having to request an IP unban though a manual process.
 */                                
                                ,ROUND(ROWNUM * (1 / k_eveapi_fetch_jobs_per_sec)) AS delay_secs

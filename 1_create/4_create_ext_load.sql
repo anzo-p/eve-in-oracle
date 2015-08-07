@@ -16,39 +16,10 @@
   DROP TABLE tmp_load_part;
   DROP TABLE tmp_load_composite;
   DROP TABLE tmp_load_assets;
-
   DROP TABLE cache_market_quicklook;
   DROP TABLE cache_asset_list;
 
 
-
-
-
-
-
-
-  CREATE TABLE ext_load_domain               (domain                   VARCHAR2(50)
-                                             ,value                    VARCHAR2(50))
-    ORGANIZATION EXTERNAL      (
-                                  TYPE ORACLE_LOADER
-                                  DEFAULT DIRECTORY directory_eve
-                                  ACCESS PARAMETERS
-                                  (
-                                     RECORDS    DELIMITED  BY newline
-                                     BADFILE directory_eve: 'bad_domain.txt'
-                                     NODISCARDFILE NOLOGFILE
-                                     SKIP 1
-                                     FIELDS     TERMINATED BY ','
-                                     OPTIONALLY ENCLOSED   BY '"'      
-                                     MISSING FIELD VALUES ARE NULL
-                                     
-                                     (domain                CHAR(50)
-                                     ,value                 CHAR(50))
-
-                                  )
-                                  LOCATION('domain.txt')
-    )
-    REJECT LIMIT UNLIMITED;
 
 
 
@@ -61,15 +32,13 @@
     
     As you can see in every ext_load_* table the columns matches the columns in respective Loader File.  
 */
-
   CREATE TABLE ext_load_part                 (label                    VARCHAR2(100)
-                                             ,race                     VARCHAR2(20)
-                                             ,class                    VARCHAR2(50)
-                                             ,tech                     INTEGER
-                                             ,material_origin          VARCHAR2(30)
+                                             ,market_browser_path      VARCHAR2(500)
                                              ,volume                   NUMBER(15,3)
                                              ,eveapi_part_id           INTEGER
-                                             ,material_efficiency      NUMBER(10,3))
+                                             ,material_efficiency      NUMBER(10,3)
+                                             ,base_invent_success      NUMBER(10,3)
+                                             ,base_invent_copies       INTEGER)
     ORGANIZATION EXTERNAL      (
                                   TYPE ORACLE_LOADER
                                   DEFAULT DIRECTORY directory_eve
@@ -84,13 +53,12 @@
                                      MISSING FIELD VALUES ARE NULL
                                      
                                      (label                 CHAR(100)
-                                     ,race                  CHAR(20)
-                                     ,class                 CHAR(50)
-                                     ,tech                  CHAR(1)
-                                     ,material_origin       CHAR(30)
+                                     ,market_browser_path   CHAR(500)
                                      ,volume                CHAR(10)
                                      ,eveapi_part_id        CHAR(10)
-                                     ,material_efficiency   CHAR(10))
+                                     ,material_efficiency   CHAR(10)
+                                     ,base_invent_success   CHAR(10)
+                                     ,base_invent_copies    CHAR(3))
                                      
                                   )
                                   LOCATION('part.txt')
@@ -142,13 +110,12 @@
     that no business logic may be used on top of these these tables.
 */
   CREATE GLOBAL TEMPORARY TABLE tmp_load_part           (label                    VARCHAR2(100)
-                                                        ,race                     VARCHAR2(20)
-                                                        ,class                    VARCHAR2(50)
-                                                        ,tech                     INTEGER
-                                                        ,material_origin          VARCHAR2(30)
+                                                        ,market_browser_path      VARCHAR2(500)
                                                         ,volume                   NUMBER(15,3)
                                                         ,eveapi_part_id           INTEGER
                                                         ,material_efficiency      NUMBER(5,3)
+                                                        ,base_invent_success      NUMBER(10,3)
+                                                        ,base_invent_copies       INTEGER
                                                         
                                                         ) ON COMMIT DELETE ROWS;
 

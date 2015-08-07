@@ -7,25 +7,27 @@
     - how Query Result           compares to  Best Price in the Known EVE Universe
     As % since it helps better to compare/estimate Profit Margins
 */
-  SELECT INITCAP(          prt.label                                                                ) AS part
-        ,INITCAP(          prt.race                                                                 ) AS race
-        ,INITCAP(          prt.material_origin                                                      ) AS origin
-        ,INITCAP(          sel.name_region                                                          ) AS region
-        ,TO_CHAR(                                 sel.offers_low_range        ,'990G990G990G990D99' ) AS sellers
-        ,TO_CHAR(                                 sel.offers_low_range * 1.02 ,'990G990G990G990D99' ) AS premium_two
-        ,TO_CHAR(                                 sel.offers_low_range * 1.04 ,'990G990G990G990D99' ) AS premium_four
- 
+  SELECT INITCAP(CASE WHEN utils.keywd(prt.ident, 'ORE') = utils.f_get('k_numeric_true') THEN
+                        utils.readable_ore(prt.label)
+                      ELSE                 prt.label
+                 END                                                                                ) AS part
+
+        ,INITCAP(:keyword)                                                                            AS keyword
+        ,INITCAP(          sel.name_region                                                          ) AS region 
+
          -- how do prices compare against best in known EVE Universe (%)?
         ,(SELECT CASE
                    WHEN :buy_local IS NOT NULL THEN
                      TO_CHAR(TRUNC(sel.offers_low_range/ bgn.offers_low_range *100)) || '% ' || INITCAP(bgn.name_region)
                  END
           FROM   vw_avg_sells_regions bgn
-          WHERE  bgn.part             =  prt.label
+          WHERE  bgn.part_id          =  prt.ident
           AND    bgn.offers_low_range = (SELECT MIN(sub.offers_low_range)
                                          FROM   vw_avg_sells_regions sub
-                                         WHERE  sub.part = bgn.part)
+                                         WHERE  sub.part_id = bgn.part_id)
           AND    ROWNUM               =  1)                                                           AS of_best_buy_in
+
+        ,TO_CHAR(                                 sel.offers_low_range        ,'990G990G990G990D99' ) AS sellers
 
          -- "Since I am currently flying at :current_region", how do these local prices compare?
         ,(SELECT CASE
@@ -33,40 +35,43 @@
                      TO_CHAR(TRUNC(sub.offers_low_range / sel.offers_low_range *100)) || '% ' || INITCAP(sub.name_region)
                  END
           FROM   vw_avg_sells_regions sub
-          WHERE  sub.part             =  prt.label
+          WHERE  sub.part_id          =  prt.ident
           AND   (sub.name_region   LIKE '%'|| UPPER(:current_region) ||'%'   AND :current_region IS NOT NULL)
           AND    ROWNUM               =  1)                                                           AS compares
 
+
+        ,TO_CHAR(                                 sel.offers_low_range * 1.02 ,'990G990G990G990D99' ) AS premium_two
+        ,TO_CHAR(                                 sel.offers_low_range * 1.04 ,'990G990G990G990D99' ) AS premium_four
 /*
          What Quantities, Expenses, and Cargo Spaces involved if we build one piece out of every product that we have preset?
          Gives a loose idea on the expected material flows, which the Industrialist ought to assume constant over time
 */
-        ,TO_CHAR( CEIL(SUM(inp.quantity)                              )       ,'990G990G990G990'    ) AS quantity
-        ,TO_CHAR( CEIL(SUM(inp.quantity)        * sel.offers_low_range)       ,'990G990G990G990'    ) AS expense
-        ,TO_CHAR( CEIL(SUM(inp.quantity)        * prt.volume          )       ,    '990G990G990'    ) AS volume
+        ,TO_CHAR( CEIL(SUM(cmp.quantity)                              )       ,'990G990G990G990'    ) AS quantity
+        ,TO_CHAR( CEIL(SUM(cmp.quantity)        * sel.offers_low_range)       ,'990G990G990G990'    ) AS expense
+        ,TO_CHAR( CEIL(SUM(cmp.quantity)        * prt.volume          )       ,    '990G990G990'    ) AS volume
         ,TO_CHAR(          prt.pile                                           ,'990G990G990G990'    ) AS pile
 
   FROM            part                 prt
-       INNER JOIN vw_avg_sells_regions sel ON sel.part = prt.label
-  LEFT OUTER JOIN produce              inp ON inp.part = prt.label -- give all items, regadrless whether decided to use in prod, like Planetary and Moon Materials and Decryptors
+       INNER JOIN vw_avg_sells_regions sel ON sel.part_id = prt.ident
+  LEFT OUTER JOIN composite            cmp ON cmp.part_id = prt.ident -- give all items, regadrless whether decided to use in prod, like Planetary and Moon Materials and Decryptors
 
-  WHERE  NVL(prt.material_origin, 'A')   NOT LIKE 'PRODUCE'
-  AND        sel.offers_low_range * sel.samples >  load_market_data.v_get('k_notable_supply_part')
 
-  AND   (    0                                  < INSTR(UPPER(:origin), prt.material_origin)   OR :origin IS NULL)
-  AND   (    prt.class                       LIKE  '%'|| UPPER(:class)  ||'%'                  OR :class  IS NULL)
-  AND   (    inp.part                          IS  NOT NULL                                    OR :every  IS NOT NULL)  
+  WHERE (   utils.keywd(prt.ident, 'MATERIALS')          = utils.f_get('k_numeric_true')
+         OR utils.keywd(prt.ident, 'RESEARCH EQUIPMENT') = utils.f_get('k_numeric_true'))
+         
+  AND       utils.keywd(prt.ident, UPPER(:keyword))      = utils.f_get('k_numeric_true')
 
-  AND        0                                  =   INSTR(NVL(UPPER(:exclude), utils.v_get('k_dummy_string'))
-                                                             ,prt.label)
-
-  AND        sel.region                         =   load_market_data.get_econ_region(p_part          => prt.label
-                                                                                    ,p_direction     => sel.direction
-                                                                                    ,p_local_regions => :buy_local)
+--  AND   (inp.part                                       IS  NOT NULL   OR :every  IS NOT NULL)  
+  AND    sel.offers_low_range * sel.samples              >  load_market_data.v_get('k_notable_supply_part')
+  AND    sel.region                                      =  load_market_data.get_econ_region(p_part_id       => prt.ident
+                                                                                            ,p_direction     => sel.direction
+                                                                                            ,p_local_regions => :buy_local)
   
-  GROUP BY prt.label, prt.race, prt.volume, prt.pile, prt.class, prt.material_origin, sel.offers_low_range, sel.name_region
-  ORDER BY origin, part
+  GROUP BY prt.ident, prt.label, prt.volume, prt.pile, sel.offers_low_range, sel.name_region
+  ORDER BY part
   ;
+
+
 
 
 
@@ -74,77 +79,115 @@
 /*
     Show me in a Single Query the required materials to build a diverse set of products.
     (Dont want to do many queries and somehow copy-cahche those results somewhere - what does that even mean?)
+
+    Sample list: 3x{huginn,pilgrim,sacrilege}
 */
-  SELECT CASE WHEN :a_list IS NOT NULL THEN :a_qty || 'x{'|| :a_list || '}; ' END ||
-         CASE WHEN :b_list IS NOT NULL THEN :b_qty || 'x{'|| :b_list || '}; ' END ||
-         CASE WHEN :c_list IS NOT NULL THEN :c_qty || 'x{'|| :c_list || '}; ' END --||
-         --CASE WHEN :d_list IS NOT NULL THEN :d_qty || 'x{'|| :d_list || '}; ' END ||
-         --CASE WHEN :e_list IS NOT NULL THEN :e_qty || 'x{'|| :e_list || '}; ' END ||
-         --CASE WHEN :f_list IS NOT NULL THEN :a_qty || 'x{'|| :f_list || '}; ' END --||
+  SELECT :list_a ||' '|| :list_b ||' '|| :list_c          AS params
 
-                                                      AS params
-        ,part, origin, race        
-        ,TO_CHAR(quantity,         '990G990G990G990') AS quantity
-        ,TO_CHAR(pile,             '990G990G990G990') AS pile
-        ,TO_CHAR(short,            '990G990G990G990') AS short
-        ,TO_CHAR(offers_low_range, '990G990G990G990') AS quote
-        ,name_region                                  AS region
+        ,part--, origin, race
+        ,INITCAP(:keyword)                               AS keyword
+        ,TO_CHAR(quantity_orig,    '990G990G990G990')    AS quantity_orig -- here as backup to illustrate material consumption on Copies over Originals
+        ,TO_CHAR(quantity_copy,    '990G990G990G990')    AS quantity_copy
+        ,TO_CHAR(pile,             '990G990G990G990')    AS pile
+        ,TO_CHAR(short,            '990G990G990G990')    AS short_copy
+        ,TO_CHAR(offers_low_range, '990G990G990G990D99') AS quote
+        ,name_region                                     AS region
 
-  FROM  (SELECT INITCAP(mat.part)            AS part
-               ,INITCAP(mat.race)            AS race
-               ,INITCAP(mat.origin)          AS origin
-               ,SUM(    mat.quantity)        AS quantity, mat.pile
-               
-               ,CASE
-                  WHEN 0 < SUM(mat.quantity) - mat.pile THEN
-                    SUM(mat.quantity) - mat.pile
-                END                          AS short
+        ,ROUND(      short * volume 
+                    /load_market_data.f_get('k_dstful')
+                    *100, 2)                             AS item_dst_cargo
+        
+        ,ROUND(SUM(  short * volume
+                    /load_market_data.f_get('k_dstful')
+                    *100)
+               OVER (ORDER BY 1), 1)                     AS total_dst_cargo
 
+
+  FROM  (SELECT         mat.part_id
+               ,INITCAP(mat.part)                      AS part
+               ,        mat.volume
+               ,        mat.pile
                ,        sel.offers_low_range
-               ,INITCAP(sel.name_region)     AS name_region
+               ,INITCAP(sel.name_region)               AS name_region
 
+               ,SUM(    mat.quantity_true_pos_bp_orig) AS quantity_orig
+               ,SUM(    mat.quantity_true_pos_bp_copy) AS quantity_copy
+
+               ,CASE
+                  WHEN 0 < SUM(mat.quantity_true_pos_bp_copy) - mat.pile THEN
+                    SUM(mat.quantity_true_pos_bp_copy) - mat.pile
+                END                                    AS short
               
-         FROM           (SELECT src.good, src.subheader, src.part, src.race, src.origin, src.pile
-                               ,src.quantity_pos * src.multiplier AS quantity
-                        
-                         FROM  (SELECT      inp.good
-                                      ,     inp.subheader
-                                      ,     inp.part
-                                      ,     prt.race
-                                      ,     prt.material_origin AS origin
-                                      ,CEIL(inp.quantity)       AS quantity
-                                      ,CEIL(inp.quantity_pos)   AS quantity_pos
-                                      ,     prt.pile
-                              
+         FROM           (SELECT src.produce, src.good, src.part_id, src.part, src.pile, src.volume
+
+
+---------------------------------- the High Fidelity way: from Blueprint Copies. Leaving :bpc_runs to NULL makes it work just like Original Blueprints
+                               ,utils.calculate(                                          FLOOR(src.job_runs / NVL(:bpc_runs, src.job_runs))   -- how many Full BPCs?                               
+                                   ||' * '||    REPLACE(src.formula_bp_orig, ':JOB_RUNS',                      NVL(:bpc_runs, src.job_runs)  )
+                                   ||' + '||    REPLACE(src.formula_bp_orig, ':JOB_RUNS', MOD  (src.job_runs,  NVL(:bpc_runs, src.job_runs)))) -- plus how many Job Runs on one further BPC
+                                                                                                                                               AS quantity_true_pos_bp_copy
+
+                                -- the faster way: from Original Blueprints, but too optimistic to use on Blueprint Copies
+                               ,utils.calculate(REPLACE(src.formula_bp_orig, ':JOB_RUNS',       src.job_runs                                )) AS quantity_true_pos_bp_orig
+----------------------------------
+                                
+                         FROM  (SELECT pdc.produce
+                                      ,pdc.good
+                                      ,prt.ident           AS part_id
+                                      ,prt.label           AS part
+                                      ,prt.volume
+                                      ,prt.pile
+                                      ,pdc.formula_bp_orig
+
                                       ,CASE
-                                         WHEN 0 < INSTR(UPPER(:a_list), inp.good) THEN :a_qty
-                                         WHEN 0 < INSTR(UPPER(:b_list), inp.good) THEN :b_qty
-                                         WHEN 0 < INSTR(UPPER(:c_list), inp.good) THEN :c_qty 
-                                         --WHEN 0 < INSTR(UPPER(:d_list), inp.good) THEN :d_qty 
-                                         --WHEN 0 < INSTR(UPPER(:e_list), inp.good) THEN :e_qty 
-                                         --WHEN 0 < INSTR(UPPER(:f_list), inp.good) THEN :f_qty 
-          
-                                       END AS multiplier
+                                         WHEN 0 < INSTR(UPPER(:list_a), pdc.produce) THEN SUBSTR(:list_a, 1, INSTR(:list_a, 'x')-1)
+                                         WHEN 0 < INSTR(UPPER(:list_b), pdc.produce) THEN SUBSTR(:list_b, 1, INSTR(:list_b, 'x')-1)
+                                         WHEN 0 < INSTR(UPPER(:list_c), pdc.produce) THEN SUBSTR(:list_c, 1, INSTR(:list_c, 'x')-1)
+                                         --...
+                                       END                 AS job_runs
+
+                                FROM       mw_produce pdc
+                                INNER JOIN part       prt ON prt.ident = pdc.part_id
                               
-                                FROM       produce inp
-                                INNER JOIN part    prt ON prt.label = inp.part
-                              
-                                WHERE (0 < INSTR(UPPER(:origin), prt.material_origin)   OR :origin IS NULL)
+                                WHERE  (utils.keywd(prt.ident, UPPER(:keyword)) = utils.f_get('k_numeric_true')   OR :keyword IS NULL)
                                 ) src
                         
-                         WHERE  src.multiplier IS NOT NULL
-                         ORDER BY src.good, src.subheader, src.part) mat
+                         WHERE  src.job_runs IS NOT NULL
+                         ORDER BY src.produce, src.good, src.part) mat
 
 
-         LEFT OUTER JOIN vw_avg_sells_regions                        sel ON sel.part = mat.part
+         LEFT OUTER JOIN vw_avg_sells_regions                        sel ON sel.part_id = mat.part_id
          
-         WHERE  (sel.region = load_market_data.get_econ_region(p_part          => sel.part
+         WHERE  (sel.region = load_market_data.get_econ_region(p_part_id       => sel.part_id
                                                               ,p_direction     => sel.direction
                                                               ,p_local_regions => :local_buy)    OR sel.region IS NULL)
 
-         GROUP BY mat.part, mat.race, mat.origin, mat.pile, sel.offers_low_range, sel.name_region)
+         GROUP BY mat.part_id, mat.part, mat.volume, mat.pile, sel.offers_low_range, sel.name_region)
 
-  ORDER BY origin, part;
+  ORDER BY part;
+
+
+
+
+/*
+
+*/
+  SELECT LPAD(TO_NUMBER(SUM(utils.calculate(REPLACE(prd.formula_bp_orig, ':JOB_RUNS', :job_runs))))
+                           -prt.pile
+             ,8, ' ')
+             
+         ||' '|| INITCAP(prd.part) AS line
+
+  FROM       mw_produce prd
+  INNER JOIN part       prt ON prt.label = prd.part
+
+  WHERE  utils.keywd(prd.part_id, 'ADVANCED MOON MATERIALS') =  utils.f_get('k_numeric_true')
+  AND    prd.produce                         IN ('HUGINN')
+
+  GROUP BY prd.part, prt.pile
+  ORDER BY prd.part
+  ;
+
 
 
 
@@ -169,26 +212,24 @@
          END AS regions
   
   FROM       part                 prt
-  INNER JOIN vw_avg_sells_regions agr ON agr.part             = prt.label
+  INNER JOIN vw_avg_sells_regions agr ON agr.part_id = prt.ident
   
-  WHERE  prt.label          IN (UPPER(:part))
+  WHERE  prt.label LIKE '%'|| UPPER(:part) ||'%'
   
   GROUP BY prt.label
           ,CASE
              WHEN :regions IS NOT NULL THEN INITCAP(agr.name_region)
            END
-  
-  ORDER BY part                ASC
-          ,avg_low_all_regions ASC;
+
+  ORDER BY avg_low_all_regions ASC;
 
 
 
 
-SELECT *
-FROM   market_order
-WHERE  part      = 'LIQUID OZONE'
-AND    direction = 'SELL'
-AND    region    = (SELECT eveapi_region_id FROM region
-                    WHERE  name_region = 'EVERYSHORE')
-ORDER BY price ASC;
-                 
+  SELECT *
+  FROM   market_order
+  WHERE  part      LIKE UPPER(:part)
+  AND    direction    = 'SELL'
+  AND    region       = (SELECT eveapi_region_id FROM region
+                         WHERE  name_region = :region)
+  ORDER BY price ASC;

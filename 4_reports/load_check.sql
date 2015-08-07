@@ -1,9 +1,26 @@
+/*
+  TODO
+  - make a program that proves what relic and decryptor are optimal
+*/
+BEGIN
+--  EXECUTE IMMEDIATE 'ALTER SESSION SET SQL_TRACE = FALSE';
+  EXECUTE IMMEDIATE 'PURGE TABLESPACE eveonline USER EVE';
+
+  EXECUTE IMMEDIATE 'ALTER SESSION SET PLSQL_OPTIMIZE_LEVEL = 3';
+  EXECUTE IMMEDIATE 'ALTER SESSION SET PLSQL_CODE_TYPE      = ' || CHR(39) || 'NATIVE' || CHR(39);
+  EXECUTE IMMEDIATE 'ALTER SESSION SET PLSQL_DEBUG          = FALSE';
+
+  dbms_utility.compile_schema(schema => 'EVE');
+END;
+/
+
+
+
 -- REFRESH ALL DATA
 BEGIN
   BEGIN
-    --delete from cache_market_quicklook; delete from produce; delete from composite; delete from part; commit; -- uncomment for a full redo
-    load_indu_details.merge_part_composite;
-    load_indu_details.define_all_products;
+    --begin delete from cache_market_quicklook; delete from produce; delete from composite; delete from part; commit; end; -- uncomment for a full redo
+    BEGIN load_indu_details.merge_part_composite; END;
   END;
 
   BEGIN
@@ -12,10 +29,9 @@ BEGIN
       load_player_data.load_pile;
     END;
 
-
     BEGIN
       -- BEGIN load_market_data.load_prices(24700, 0.5); END; -- DEBUG with one items market data
-      
+      -- BEGIN DELETE FROM cache_market_quicklook; COMMIT; END;
       load_market_data.submit_price_jobs(p_local_regions  => 'VERGE VENDOR GENESIS ESSENCE EVERYSHORE SINQ LAISON PLACID THE CITADEL' -- define your local regions
                                         ,p_security_limit => 0.5);
 
@@ -24,6 +40,8 @@ BEGIN
   END;
 END;
 /
+
+
 
 
 -- Remaining JOBs
@@ -35,9 +53,13 @@ FROM   user_jobs jobs ORDER BY jobs.job;
 
 
 
-SELECT * FROM cache_market_quicklook;
-SELECT * FROM cache_asset_list;
 
+
+-- market_order DELETEd and now missing? (market_order is the way to DRILL IN and find where exactly the sell is before traveling there
+SELECT *
+FROM            market_aggregate agr
+LEFT OUTER JOIN market_order     mor ON mor.part_id = agr.part_id
+WHERE  mor.part_id IS NULL;
 
 
 
@@ -80,10 +102,9 @@ SELECT * FROM cache_asset_list;
 
 -- Quickly browse on anything at Input
   SELECT *
-  FROM   produce
-  WHERE  good       = 'PILGRIM'
-  --AND    transitive = 'FALSE'
-  ORDER BY good, subheader, part
+  FROM   mw_produce
+  WHERE  produce = 'PILGRIM'
+  ORDER BY produce, good, part
   ;
 
 
