@@ -4,6 +4,9 @@ CREATE OR REPLACE PACKAGE load_player_data IS
 /*
     Access EVE API XML for player data. Currently only getting the assets owned by Player/Corporation.
 
+    Be sure to create an EVE API KEY for your Char and Corp here
+      https://community.eveonline.com/support/api-key/
+    
     Must read:
       https://developers.eveonline.com/resource/xml-api
       http://wiki.eve-id.net/APIv2_Page_Index
@@ -97,7 +100,7 @@ CREATE OR REPLACE PACKAGE BODY load_player_data AS
   
           IF r_chr.char_corp = 'char' THEN
             v_url := v_url
-                     ||'&'||'characterID=' || r_chr.id;
+                     ||'&'||'characterID='                || r_chr.id;
           END IF;
   
 
@@ -166,7 +169,7 @@ CREATE OR REPLACE PACKAGE BODY load_player_data AS
   
         --LEFT OUTER JOIN part prt ON prt.eveapi_part_id = cld.type_id -- DEBUG
         INNER JOIN part prt ON prt.eveapi_part_id = cld.type_id
-        WHERE   cch.corp_char_name = r_chr.name;
+        WHERE  cch.corp_char_name = r_chr.name;
         
     END LOOP;
       

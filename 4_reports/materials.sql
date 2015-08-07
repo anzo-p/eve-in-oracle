@@ -1,37 +1,42 @@
 /*
     What's the CHEAPest Region for HIGH FLOW items?
     Everyone needs these input, incl. arbitrageurs, who might then become our customers.    
-
-    Also
-    - how this Region   compares to  Query Result  (when :region set to current region)
-    - how Query Result  compares to  Best Price in known EVE Universe
+    
+    Price/Distance Convenience:
+    - how param :current_region  compares to  Query Result
+    - how Query Result           compares to  Best Price in the Known EVE Universe
     As % since it helps better to compare/estimate Profit Margins
 */
   SELECT INITCAP(          prt.label                                                                ) AS part
         ,INITCAP(          prt.race                                                                 ) AS race
-        ,:buy_local                                                                                   AS loc
         ,INITCAP(          prt.material_origin                                                      ) AS origin
         ,INITCAP(          sel.name_region                                                          ) AS region
         ,TO_CHAR(                                 sel.offers_low_range        ,'990G990G990G990D99' ) AS sellers
+        ,TO_CHAR(                                 sel.offers_low_range * 1.02 ,'990G990G990G990D99' ) AS premium_two
+        ,TO_CHAR(                                 sel.offers_low_range * 1.04 ,'990G990G990G990D99' ) AS premium_four
  
          -- how do prices compare against best in known EVE Universe (%)?
-        ,(SELECT TO_CHAR(TRUNC(sel.offers_low_range / bgn.offers_low_range *100)) || '% ' || INITCAP(bgn.name_region)
+        ,(SELECT CASE
+                   WHEN :buy_local IS NOT NULL THEN
+                     TO_CHAR(TRUNC(sel.offers_low_range/ bgn.offers_low_range *100)) || '% ' || INITCAP(bgn.name_region)
+                 END
           FROM   vw_avg_sells_regions bgn
           WHERE  bgn.part             =  prt.label
           AND    bgn.offers_low_range = (SELECT MIN(sub.offers_low_range)
                                          FROM   vw_avg_sells_regions sub
                                          WHERE  sub.part = bgn.part)
-          AND    ROWNUM               =  1)                                                           AS of_best_buy
+          AND    ROWNUM               =  1)                                                           AS of_best_buy_in
 
-         -- "Since I am currently flying at :region", how do these local prices compare?
-        ,(SELECT TO_CHAR(TRUNC(sub.offers_low_range / sel.offers_low_range *100)) || '% ' || INITCAP(sub.name_region)
+         -- "Since I am currently flying at :current_region", how do these local prices compare?
+        ,(SELECT CASE
+                   WHEN :current_region IS NOT NULL THEN
+                     TO_CHAR(TRUNC(sub.offers_low_range / sel.offers_low_range *100)) || '% ' || INITCAP(sub.name_region)
+                 END
           FROM   vw_avg_sells_regions sub
           WHERE  sub.part             =  prt.label
-          AND    sub.name_region   LIKE '%'|| UPPER(:region) ||'%'
-          AND    ROWNUM               =  1)                                                           AS this_region
+          AND   (sub.name_region   LIKE '%'|| UPPER(:current_region) ||'%'   AND :current_region IS NOT NULL)
+          AND    ROWNUM               =  1)                                                           AS compares
 
-        ,TO_CHAR(                                 sel.offers_low_range * 1.02 ,'990G990G990G990D99' ) AS premium_two
-        ,TO_CHAR(                                 sel.offers_low_range * 1.04 ,'990G990G990G990D99' ) AS premium_four
 /*
          What Quantities, Expenses, and Cargo Spaces involved if we build one piece out of every product that we have preset?
          Gives a loose idea on the expected material flows, which the Industrialist ought to assume constant over time

@@ -1,5 +1,6 @@
 CREATE OR REPLACE PACKAGE load_market_data IS
 
+
 /*
     This site ofers these same prices online, one item at a time though.
     May double-check to verify whether this code fetches the prices correctly.
@@ -403,6 +404,7 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
 */
     DELETE FROM market_order
     WHERE  part = v_label;
+
 
 
 ---- INSERT FROM local XML INTO local database

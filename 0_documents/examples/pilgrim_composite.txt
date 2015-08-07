@@ -1,0 +1,88 @@
+ good                                                                             ,  part                                                                             ,     quantity   ,  meffic
+
+
+Everything that is built must have a composition rule here:
+Basically all items/parts that are taken into a more advanced part
+
+Part     = the inputs to an EVE Online Industry job
+Good     = the output of that Industry job
+Quantity = how many of that item required when NO Material Efficiencies applied
+
+
+
+Materials required to INVENT a Pilgrim Blueprint Copy (BPC)
+"PILGRIM BLUEPRINT COPY"                                                          , "ELECTRONIC ENGINEERING"                                                          ,        "8"     , "FALSE"
+"PILGRIM BLUEPRINT COPY"                                                          , "AMARRIAN STARSHIP ENGINEERING"                                                   ,        "8"     , "FALSE"
+"PILGRIM BLUEPRINT COPY"                                                          , "ACCELERANT DECRYPTOR"                                                            ,        "1"     , "FALSE"
+
+
+Components required to build a Pilgrim
+"FUSION THRUSTER"                                                                 , "TUNGSTEN CARBIDE"                                                                ,       "13"     , "TRUE"
+"FUSION THRUSTER"                                                                 , "PHENOLIC COMPOSITES"                                                             ,        "3"     , "TRUE"
+"FUSION THRUSTER"                                                                 , "FERROGEL"                                                                        ,        "1"     , "FALSE"
+
+"RADAR SENSOR CLUSTER"                                                            , "TUNGSTEN CARBIDE"                                                                ,       "22"     , "TRUE"
+"RADAR SENSOR CLUSTER"                                                            , "NANOTRANSISTORS"                                                                 ,        "1"     , "FALSE"
+"RADAR SENSOR CLUSTER"                                                            , "HYPERSYNAPTIC FIBERS"                                                            ,        "2"     , "TRUE"
+
+"NANOELECTRICAL MICROPROCESSOR"                                                   , "TUNGSTEN CARBIDE"                                                                ,       "17"     , "TRUE"
+"NANOELECTRICAL MICROPROCESSOR"                                                   , "PHENOLIC COMPOSITES"                                                             ,        "6"     , "TRUE"
+"NANOELECTRICAL MICROPROCESSOR"                                                   , "NANOTRANSISTORS"                                                                 ,        "2"     , "TRUE"
+"NANOELECTRICAL MICROPROCESSOR"                                                   , "TERAHERTZ METAMATERIALS"                                                         ,        "2"     , "TRUE"
+
+"TUNGSTEN CARBIDE ARMOR PLATE"                                                    , "TUNGSTEN CARBIDE"                                                                ,       "44"     , "TRUE"
+"TUNGSTEN CARBIDE ARMOR PLATE"                                                    , "SYLRAMIC FIBERS"                                                                 ,       "11"     , "TRUE"
+
+"ANTIMATTER REACTOR UNIT"                                                         , "TUNGSTEN CARBIDE"                                                                ,        "9"     , "TRUE"
+"ANTIMATTER REACTOR UNIT"                                                         , "FERMIONIC CONDENSATES"                                                           ,        "2"     , "TRUE"
+
+"TESSERACT CAPACITOR UNIT"                                                        , "TUNGSTEN CARBIDE"                                                                ,       "27"     , "TRUE"
+"TESSERACT CAPACITOR UNIT"                                                        , "FULLERIDES"                                                                      ,       "11"     , "TRUE"
+"TESSERACT CAPACITOR UNIT"                                                        , "NANOTRANSISTORS"                                                                 ,        "1"     , "FALSE"
+"TESSERACT CAPACITOR UNIT"                                                        , "TERAHERTZ METAMATERIALS"                                                         ,        "2"     , "TRUE"
+
+"LINEAR SHIELD EMITTER"                                                           , "TUNGSTEN CARBIDE"                                                                ,       "22"     , "TRUE"
+"LINEAR SHIELD EMITTER"                                                           , "SYLRAMIC FIBERS"                                                                 ,        "9"     , "TRUE"
+"LINEAR SHIELD EMITTER"                                                           , "FERROGEL"                                                                        ,        "1"     , "FALSE"
+
+
+The Tech 1 ship required (out of which the Pilgrim will be an improvement to a Tech 2 version)
+"ARBITRATOR"                                                                      , "TRITANIUM"                                                                       ,   "444444"     , "TRUE"
+"ARBITRATOR"                                                                      , "PYERITE"                                                                         ,   "100000"     , "TRUE"
+"ARBITRATOR"                                                                      , "MEXALLON"                                                                        ,    "41111"     , "TRUE"
+"ARBITRATOR"                                                                      , "ISOGEN"                                                                          ,     "8889"     , "TRUE"
+"ARBITRATOR"                                                                      , "NOCXIUM"                                                                         ,     "2222"     , "TRUE"
+"ARBITRATOR"                                                                      , "ZYDRINE"                                                                         ,     "1112"     , "TRUE"
+"ARBITRATOR"                                                                      , "MEGACYTE"                                                                        ,      "222"     , "TRUE"
+
+
+Whatever these are.., also required; NOTE the required quantities go into decimals. This is because one Manufacturing round builds 100, not 1
+"R.A.M.- STARSHIP TECH"                                                           , "TRITANIUM"                                                                       ,        "5.56"  , "TRUE"
+"R.A.M.- STARSHIP TECH"                                                           , "PYERITE"                                                                         ,        "4.44"  , "TRUE"
+"R.A.M.- STARSHIP TECH"                                                           , "MEXALLON"                                                                        ,        "2.22"  , "TRUE"
+"R.A.M.- STARSHIP TECH"                                                           , "ISOGEN"                                                                          ,        "0.82"  , "TRUE"
+"R.A.M.- STARSHIP TECH"                                                           , "NOCXIUM"                                                                         ,        "0.36"  , "TRUE"
+
+
+
+Finally build the ship.
+
+( NOTE that the blueprint copy also has a quantity and it goes into decimals.
+  This is because having all affecting invention skills at IV gives a success probability of 42.6% (when using Accelerant Decryptor).
+  A successful invention job gives 2 rounds to build a pilgrim and so we get almost one round per invention job:
+
+  success / probability / normalize to one round
+    100%  /     42.6%   /          2             = 1.17 Pilgrim Blueprint Jobs required to get that necessary BPC )
+
+"PILGRIM"                                                                         , "PILGRIM BLUEPRINT COPY"                                                          ,        "1.17"  , "FALSE"
+"PILGRIM"                                                                         , "FUSION THRUSTER"                                                                 ,       "57"     , "TRUE"
+"PILGRIM"                                                                         , "RADAR SENSOR CLUSTER"                                                            ,      "495"     , "TRUE"
+"PILGRIM"                                                                         , "NANOELECTRICAL MICROPROCESSOR"                                                   ,     "1800"     , "TRUE"
+"PILGRIM"                                                                         , "TUNGSTEN CARBIDE ARMOR PLATE"                                                    ,     "3750"     , "TRUE"
+"PILGRIM"                                                                         , "ANTIMATTER REACTOR UNIT"                                                         ,       "30"     , "TRUE"
+"PILGRIM"                                                                         , "TESSERACT CAPACITOR UNIT"                                                        ,      "375"     , "TRUE"
+"PILGRIM"                                                                         , "LINEAR SHIELD EMITTER"                                                           ,      "300"     , "TRUE"
+"PILGRIM"                                                                         , "MORPHITE"                                                                        ,      "150"     , "TRUE"
+"PILGRIM"                                                                         , "CONSTRUCTION BLOCKS"                                                             ,       "75"     , "TRUE"
+"PILGRIM"                                                                         , "R.A.M.- STARSHIP TECH"                                                           ,       "18"     , "TRUE"
+"PILGRIM"                                                                         , "ARBITRATOR"                                                                      ,        "1"     , "FALSE"

@@ -82,13 +82,14 @@
 
          LEFT OUTER JOIN local_regions        loc ON  loc.region = sel.region
          
-
+         -- This must go together with that LEFT OUTER JOIN
          WHERE  (      loc.region                            IS NOT NULL
                  OR   :local_sell                            IS NULL)
 
-         AND   ((    ( buy.bids_high_range * buy.samples      > load_market_data.f_get('k_notable_demand_good')   )
-                 AND ( brk.breakeven       / buy.highest_bid <  load_market_data.f_get('k_buys_max_below_break')  )
-                 AND ( sel.lowest_offer    / brk.breakeven    > load_market_data.f_get('k_sells_min_above_break') )
+         AND   ((    1=1 -- comment out any of the below and still works
+                 AND ( buy.bids_high_range * buy.samples      > load_market_data.f_get('k_notable_demand_good')   ) -- capital bound in buy orders means interest
+               --AND ( brk.breakeven       / buy.highest_bid <  load_market_data.f_get('k_buys_max_below_break')  ) -- conflicts with high :adjust
+                 AND ( sel.lowest_offer    / brk.breakeven    > load_market_data.f_get('k_sells_min_above_break') ) -- basically rules out negative margins 
                 )
 
                  OR  :good IS NOT NULL) -- obviously you want full results with specific Searches regardless whether theyre promising or not
@@ -137,8 +138,8 @@
         ,  TO_CHAR(items_total,        '990G990G990G990'   ) AS items_tot
         ,                                                       pct
         ,  TO_CHAR(goods_total,        '990G990G990G990'   ) AS goods_tot
-        ,  TO_CHAR(goods_total * 0.96, '990G990G990G990'   ) AS discont_four
-        ,  TO_CHAR(goods_total * 0.93, '990G990G990G990'   ) AS discont_seven
+        ,  TO_CHAR(goods_total * 0.96, '990G990G990G990'   ) AS disconut_four
+        ,  TO_CHAR(goods_total * 0.93, '990G990G990G990'   ) AS disconut_seven
         ,  TO_CHAR(breakeven,          '990G990G990G990'   ) AS break
         ,  TO_CHAR(just_buy_it,        '990G990G990G990'   ) AS just_buy_it
 
@@ -173,22 +174,23 @@
                                                                      ,p_local_regions => :local_sell)  OR sub.region IS NULL) AS just_buy_it
 
 
-         FROM (SELECT inp.good, inp.subheader, inp.part, prt.material_origin AS origin, prt.volume
-                     ,prt.pile, cmp.batch, sel.region, sel.offers_low_range, sel.name_region, goo.tech
+         FROM (SELECT pdc.good, pdc.subheader, pdc.part, prt.material_origin AS origin, prt.volume
+                     ,prt.pile, xtr.batch, sel.region, sel.offers_low_range, sel.name_region, goo.tech
 
-                      -- replace with inp.me when no POS
-                     ,inp.me_pos AS me
-                     --,inp.me
+                      -- replace with pdc.me when no POS
+                     ,pdc.me_pos AS me
+                     --,pdc.me
                      
-                     ,CASE
-                        WHEN prt.material_origin IN ('ICE', 'MINERAL')        THEN FLOOR(inp.quantity_pos * batch) -- replace all with inp.quantity when no POS
-                        WHEN prt.class           IN ('DATACORE', 'DECRYPTOR') THEN       inp.quantity_pos * batch
-                        ELSE                                                        CEIL(inp.quantity_pos * batch) -- DEFAULT
+                     ,CASE                                                             --pdc.quantity     * xtr.batch -- on all, when no POS
+                        WHEN prt.class           IN ('DATACORE', 'DECRYPTOR') THEN       pdc.quantity_pos * xtr.batch  -- invention materials probabilistic
+                        WHEN goo.material_origin IN ('ICE ORE', 'ORE')        THEN FLOOR(pdc.quantity_pos * xtr.batch) -- reprocessing will floor outcome materials
+                        ELSE                                                        CEIL(pdc.quantity_pos * xtr.batch) -- manufacturing will ceil input materials
                       END AS quantity
                       
-                FROM             produce             inp
-                     INNER JOIN  part                prt ON prt.label = inp.part
-                     INNER JOIN  part                goo ON goo.label = inp.good
+
+                FROM             produce             pdc
+                     INNER JOIN  part                prt ON prt.label = pdc.part
+                     INNER JOIN  part                goo ON goo.label = pdc.good
       
                      -- extra join for Ore and Fuel
                      INNER JOIN (SELECT label, material_origin
@@ -197,12 +199,13 @@
                                           WHEN class            = 'COMPONENT - FUEL BLOCK' THEN 40  *:rounds  -- Fuel Block normalized back to batch of 40, times intended production rounds
                                           ELSE                                                  TO_NUMBER(:rounds)
                                         END AS batch
-                                 FROM   part)        cmp ON cmp.label = inp.good
+                                 FROM   part)        xtr ON xtr.label = pdc.good
 
                 LEFT OUTER JOIN vw_avg_sells_regions sel ON sel.part  = prt.label
 
-                WHERE      inp.good            LIKE '%' || UPPER(:good)  || '%'
-                AND        inp.transitive         = 'FALSE'
+
+                WHERE      pdc.good            LIKE '%' || UPPER(:good)  || '%'
+                AND        pdc.transitive         = 'FALSE'
                 AND   (    sel.region             = load_market_data.get_econ_region(p_part          => prt.label
                                                                                     ,p_direction     => sel.direction
                                                                                     ,p_local_regions => :local_buy)    OR sel.region IS NULL))
