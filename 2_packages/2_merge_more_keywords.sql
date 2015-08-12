@@ -6,23 +6,23 @@
     TODO: why not make it more like part.txt? Maybe add another such loader file and fill in more keywords in the same '/' -fashion?
 */
 BEGIN
-/*
-  FOR i IN (SELECT prt.ident AS part_id
-            FROM       part        prt
-            INNER JOIN keyword_map kmp ON kmp.part_id = prt.ident
-            INNER JOIN keyword     kwd ON kwd.ident   = kmp.keyword_id
-            WHERE  kwd.label IN ('BOOSTER')
-
-            ) LOOP
-  
-    load_indu_details.merge_keywords(p_part_id  => i.part_id
-                                    ,p_keywords => 'CONTRACTS');
-  END LOOP;
-*/
   
   FOR i IN (SELECT ident AS part_id
             FROM   part
-            WHERE  label     IN ('ASTERO BLUEPRINT COPY'
+            WHERE  label     IN ('STANDARD DROP BOOSTER BLUEPRINT COPY'
+                                ,'IMPROVED DROP BOOSTER BLUEPRINT COPY'
+                                ,'STRONG DROP BOOSTER BLUEPRINT COPY'
+                                ,'STANDARD FRENTIX BOOSTER BLUEPRINT COPY'
+                                ,'IMPROVED FRENTIX BOOSTER BLUEPRINT COPY'
+                                ,'STRONG FRENTIX BOOSTER BLUEPRINT COPY'
+                                ,'STANDARD MINDFLOOD BOOSTER BLUEPRINT COPY'
+                                ,'IMPROVED MINDFLOOD BOOSTER BLUEPRINT COPY'
+                                ,'STRONG MINDFLOOD BOOSTER BLUEPRINT COPY'
+                                ,'STANDARD SOOTH SAYER BOOSTER BLUEPRINT COPY'
+                                ,'IMPROVED SOOTH SAYER BOOSTER BLUEPRINT COPY'
+                                ,'STRONG SOOTH SAYER BOOSTER BLUEPRINT COPY'
+            
+                                ,'ASTERO BLUEPRINT COPY'
                                 ,'CRUOR BLUEPRINT COPY'
                                 ,'DAREDEVIL BLUEPRINT COPY'
                                 ,'DRAMIEL BLUEPRINT COPY'
@@ -118,8 +118,8 @@ BEGIN
 
   FOR i IN (SELECT ident AS part_id
             FROM   part
-            WHERE  label LIKE '% - %'
-            AND    label LIKE '%BLUEPRINT COPY%'
+            WHERE  label   LIKE '% - %'
+            AND    label   LIKE '%BLUEPRINT COPY%'
             UNION
             SELECT ident AS part_id
             FROM   part
@@ -139,6 +139,10 @@ BEGIN
     load_indu_details.merge_keywords(p_part_id  => i.part_id
                                     ,p_keywords => 'REVERSE ENGINEERING');
   END LOOP;
+
+
+
+  load_indu_details.refresh_views;
 
 
   COMMIT;

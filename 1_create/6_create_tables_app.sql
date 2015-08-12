@@ -35,28 +35,7 @@
 
 
 
-  CREATE TABLE keyword                       (ident                     INTEGER                                     NOT NULL
-                                             ,label                     VARCHAR2(50)                                NOT NULL
-                    
-                                             ,CONSTRAINT pk_keyword PRIMARY KEY (ident));
-                                             
-  CREATE INDEX ix_keyword_label               ON keyword(label);
-
-
-
-  CREATE TABLE keyword_map                   (keyword_id                INTEGER                                     NOT NULL
-                                             ,part_id                   INTEGER                                     NOT NULL
-                        
-                                             ,CONSTRAINT fk_keyword_link      FOREIGN KEY (keyword_id) REFERENCES keyword(ident)   ON DELETE CASCADE
-                                             ,CONSTRAINT fk_keyword_part_link FOREIGN KEY (part_id)    REFERENCES part(ident)      ON DELETE CASCADE
-                                             
-                                             ,CONSTRAINT br_distinct_mapping UNIQUE (keyword_id, part_id);
-
-  CREATE INDEX ix_keyword_link                ON keyword_map(keyword_id);
-  CREATE INDEX ix_keyword_part_link           ON keyword_map(part_id);
   
-
-
   CREATE TABLE region                        (eveapi_region_id          INTEGER                                     NOT NULL
                                              ,name_region               VARCHAR2(50)     UNIQUE                     NOT NULL
                      
@@ -104,6 +83,29 @@
   CREATE INDEX ix_composite_good_label        ON composite(good);
   CREATE INDEX ix_composite_part_label        ON composite(part);
    
+
+
+
+  CREATE TABLE keyword                       (ident                     INTEGER                                     NOT NULL
+                                             ,label                     VARCHAR2(50)                                NOT NULL
+                    
+                                             ,CONSTRAINT pk_keyword PRIMARY KEY (ident));
+                                             
+  CREATE INDEX ix_keyword_label               ON keyword(label);
+
+
+
+  CREATE TABLE keyword_map                   (keyword_id                INTEGER                                     NOT NULL
+                                             ,part_id                   INTEGER                                     NOT NULL
+                        
+                                             ,CONSTRAINT fk_keyword_link      FOREIGN KEY (keyword_id) REFERENCES keyword(ident)   ON DELETE CASCADE
+                                             ,CONSTRAINT fk_keyword_part_link FOREIGN KEY (part_id)    REFERENCES part(ident)      ON DELETE CASCADE
+                                             
+                                             ,CONSTRAINT br_distinct_mapping UNIQUE (keyword_id, part_id));
+
+  CREATE INDEX ix_keyword_link                ON keyword_map(keyword_id);
+  CREATE INDEX ix_keyword_part_link           ON keyword_map(part_id);
+
 
 
 

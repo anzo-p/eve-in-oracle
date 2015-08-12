@@ -4,19 +4,19 @@
     One way to yield on this is to build 5-10 different kinds of products out of those that show higher profits,
     and keep filling the shelves as they sell. Another valuable info is which products do not seem profitable at the moment.
 */
-  SELECT INITCAP(produce) AS produce, INITCAP(name_region) AS region
-        ,            sel_samples                                                                          AS sells
-        ,TO_CHAR(                   lowest_offer,                                      '990G990G990G990') AS lowest_offer
-        ,TO_CHAR(                   offers_low_range,                                  '990G990G990G990') AS offers_low_range
-        ,            buy_samples                                                                          AS buys
-        ,TO_CHAR(                   highest_bid,                                       '990G990G990G990') AS highest_bid
-        ,TO_CHAR(                   bids_high_range,                                   '990G990G990G990') AS bids_high_range
-        ,TO_CHAR(                                    mid_spread,                       '990G990G990G990') AS mid_spread
-        ,TO_NUMBER( :adjust                                                                             ) AS adj
-        ,TO_CHAR(    mid_spread + ((lowest_offer   - mid_spread)      * :adjust/100),  '990G990G990G990') AS my_adjusted_offer
-        ,TO_CHAR(                                    mid_spread_jita,                  '990G990G990G990') AS mid_spread_jita
-        ,TO_CHAR(                                                       breakeven,     '990G990G990G990') AS break
-        ,TO_CHAR(    buy_samples *  bids_high_range,                                   '990G990G990G990') AS demand
+  SELECT INITCAP(fin.produce) AS produce, INITCAP(fin.name_region) AS region
+        ,            fin.sel_samples                                                                                    AS sells
+        ,TO_CHAR(                        fin.lowest_offer,                                           '990G990G990G990') AS lowest_offer
+        ,TO_CHAR(                        fin.offers_low_range,                                       '990G990G990G990') AS offers_low_range
+        ,            fin.buy_samples                                                                                    AS buys
+        ,TO_CHAR(                        fin.highest_bid,                                            '990G990G990G990') AS highest_bid
+        ,TO_CHAR(                        fin.bids_high_range,                                        '990G990G990G990') AS bids_high_range
+        ,TO_CHAR(                                             fin.mid_spread,                        '990G990G990G990') AS mid_spread
+        ,TO_NUMBER( :adjust                                                                                           ) AS adj
+        ,TO_CHAR(    fin.mid_spread  + ((fin.lowest_offer   - fin.mid_spread)      * :adjust/100),   '990G990G990G990') AS my_adjusted_offer
+        ,TO_CHAR(                                             fin.mid_spread_jita,                   '990G990G990G990') AS mid_spread_jita
+        ,TO_CHAR(                                                                    fin.breakeven,  '990G990G990G990') AS break
+        ,TO_CHAR(    fin.buy_samples *  fin.bids_high_range,                                         '990G990G990G990') AS demand
 
 
 /*
@@ -31,9 +31,9 @@
          The greatest of { mid spread at Jita, your adjusted offer } becomes Margin against Breakeven.
          And that margin is also made the Sort Order.
 */
-        ,utils.per_cent(p_share    => mid_spread + ((lowest_offer - mid_spread) * :adjust/100) - breakeven
-                       ,p_total    => breakeven
-                       ,p_decimals => 1)                                                                  AS margin
+        ,utils.per_cent(p_share    => fin.mid_spread + ((fin.lowest_offer - fin.mid_spread) * :adjust/100) - breakeven
+                       ,p_total    => fin.breakeven
+                       ,p_decimals => 1)                                                                                AS margin
 
 
   FROM  (SELECT brk.produce, sel.name_region, brk.breakeven
@@ -58,7 +58,7 @@
                                                                                  ,1)))) -- for simplicity lets assume we build only one Unit
                                                                                  AS breakeven
                                                           
-                FROM       mw_produce           pdc
+                FROM       vw_produce_leaves    pdc
                 INNER JOIN part                 goo ON goo.ident   = pdc.produce_id
                 INNER JOIN part                 prt ON prt.ident   = pdc.part_id
                 INNER JOIN vw_avg_sells_regions agr ON agr.part_id = prt.ident
@@ -100,19 +100,19 @@
                  OR   :local_sell                            IS NULL)
 
          AND   ((    1=1 -- comment out any of the below and still works
---                 AND ( buy.bids_high_range * buy.samples      > load_market_data.f_get('k_notable_demand_good')   ) -- capital bound in buy orders means interest
+                 AND ( buy.bids_high_range * buy.samples      > load_market_data.f_get('k_notable_demand_good')   ) -- capital bound in buy orders means interest
 --                 AND ( brk.breakeven       / buy.highest_bid <  load_market_data.f_get('k_buys_max_below_break')  ) -- conflicts with high :adjust
 --                 AND ( sel.lowest_offer    / brk.breakeven    > load_market_data.f_get('k_sells_min_above_break') ) -- basically rules out negative margins 
                 )
 
                  OR  :produce IS NOT NULL) -- obviously you want full results with specific Searches regardless whether theyre promising or not
 
-        ) lst
+        ) fin
 
-  ORDER BY utils.per_cent(p_share => GREATEST(lst.mid_spread       + ((lst.lowest_offer - lst.mid_spread) * :adjust/100)
-                                             ,lst.mid_spread_jita)
-                                    -lst.breakeven
-                         ,p_total => lst.breakeven) DESC
+  ORDER BY utils.per_cent(p_share => GREATEST(fin.mid_spread       + ((fin.lowest_offer - fin.mid_spread) * :adjust/100)
+                                             ,fin.mid_spread_jita)
+                                    -fin.breakeven
+                         ,p_total => fin.breakeven) DESC
   ;
 
 
@@ -191,8 +191,13 @@
               
                       ,sel.region, sel.offers_low_range, sel.name_region
 
+/*
+AS FOR ORE YOU ONLY EVER NEED THE PRICE TO PAY IE COMPARE TO MARKET PRICE IE IN BATCHES OF 100 WHERE THE PRICE YOU JUST DIVIDE BY 100 IN YOUR HEAD
+SO ALWAYS :job_runs = 100 and :bpc_runs = NULL OR :job_runs
+BUT YOU HAVE TO SOLVE THE FUEL BLOCK AND RAM ISSUE TOO AT THE SAME TIME
+*/
                
-                FROM             mw_produce           pdc
+                FROM             vw_produce_leaves    pdc
                 INNER JOIN       part                 prt ON prt.ident   = pdc.part_id 
 
                 INNER JOIN      (SELECT :job_runs                                    AS job_runs

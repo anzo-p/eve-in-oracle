@@ -42,9 +42,10 @@
 
         ,TO_CHAR(                                 sel.offers_low_range * 1.02 ,'990G990G990G990D99' ) AS premium_two
         ,TO_CHAR(                                 sel.offers_low_range * 1.04 ,'990G990G990G990D99' ) AS premium_four
+
 /*
          What Quantities, Expenses, and Cargo Spaces involved if we build one piece out of every product that we have preset?
-         Gives a loose idea on the expected material flows, which the Industrialist ought to assume constant over time
+         Gives a loose idea on the expected material flows, which the Industrialist ought to assume over time
 */
         ,TO_CHAR( CEIL(SUM(cmp.quantity)                              )       ,'990G990G990G990'    ) AS quantity
         ,TO_CHAR( CEIL(SUM(cmp.quantity)        * sel.offers_low_range)       ,'990G990G990G990'    ) AS expense
@@ -77,12 +78,12 @@
 
 
 /*
-    Show me in a Single Query the required materials to build a diverse set of products.
-    (Dont want to do many queries and somehow copy-cahche those results somewhere - what does that even mean?)
+    Shop list: Show me in a Single Query the required materials to build a diverse set of products.    
+    Dont want to do many queries and somehow copy-cahche those results somewhere - what does that even mean?
 
     Sample list: 3x{huginn,pilgrim,sacrilege}
 */
-  SELECT :list_a ||' '|| :list_b ||' '|| :list_c          AS params
+  SELECT :list_a ||' '|| :list_b ||' '|| :list_c         AS params
 
         ,part--, origin, race
         ,INITCAP(:keyword)                               AS keyword
@@ -121,7 +122,7 @@
          FROM           (SELECT src.produce, src.good, src.part_id, src.part, src.pile, src.volume
 
 
----------------------------------- the High Fidelity way: from Blueprint Copies. Leaving :bpc_runs to NULL makes it work just like Original Blueprints
+------------------------------- the High Fidelity way: from Blueprint Copies. Leaving :bpc_runs to NULL makes it work just like Original Blueprints
                                ,utils.calculate(                                          FLOOR(src.job_runs / NVL(:bpc_runs, src.job_runs))   -- how many Full BPCs?                               
                                    ||' * '||    REPLACE(src.formula_bp_orig, ':JOB_RUNS',                      NVL(:bpc_runs, src.job_runs)  )
                                    ||' + '||    REPLACE(src.formula_bp_orig, ':JOB_RUNS', MOD  (src.job_runs,  NVL(:bpc_runs, src.job_runs)))) -- plus how many Job Runs on one further BPC
@@ -129,7 +130,7 @@
 
                                 -- the faster way: from Original Blueprints, but too optimistic to use on Blueprint Copies
                                ,utils.calculate(REPLACE(src.formula_bp_orig, ':JOB_RUNS',       src.job_runs                                )) AS quantity_true_pos_bp_orig
-----------------------------------
+-------------------------------
                                 
                          FROM  (SELECT pdc.produce
                                       ,pdc.good
@@ -140,14 +141,16 @@
                                       ,pdc.formula_bp_orig
 
                                       ,CASE
-                                         WHEN 0 < INSTR(UPPER(:list_a), pdc.produce) THEN SUBSTR(:list_a, 1, INSTR(:list_a, 'x')-1)
-                                         WHEN 0 < INSTR(UPPER(:list_b), pdc.produce) THEN SUBSTR(:list_b, 1, INSTR(:list_b, 'x')-1)
-                                         WHEN 0 < INSTR(UPPER(:list_c), pdc.produce) THEN SUBSTR(:list_c, 1, INSTR(:list_c, 'x')-1)
+                                       -- format: Nx { [Elements, comma delimited] } eg. 3x{huginn,pilgrim,sacrilege}
+                                       --WHEN                Produce   EXISTS in Our List                      THEN do given Job Runs
+                                         WHEN utils.elem(pdc.produce, :list_a) = utils.v_get('k_numeric_true') THEN SUBSTR(:list_a, 1, INSTR(:list_a, 'x')-1)
+                                         WHEN utils.elem(pdc.produce, :list_b) = utils.v_get('k_numeric_true') THEN SUBSTR(:list_b, 1, INSTR(:list_b, 'x')-1)
+                                         WHEN utils.elem(pdc.produce, :list_c) = utils.v_get('k_numeric_true') THEN SUBSTR(:list_c, 1, INSTR(:list_c, 'x')-1)
                                          --...
                                        END                 AS job_runs
 
-                                FROM       mw_produce pdc
-                                INNER JOIN part       prt ON prt.ident = pdc.part_id
+                                FROM       vw_produce_leaves pdc
+                                INNER JOIN part              prt ON prt.ident = pdc.part_id
                               
                                 WHERE  (utils.keywd(prt.ident, UPPER(:keyword)) = utils.f_get('k_numeric_true')   OR :keyword IS NULL)
                                 ) src
@@ -170,22 +173,35 @@
 
 
 /*
-
+    Jobs list: What Intermediary Components needed to Build set of Produces?
+    Copy below and Erase when Installing to keep track on remaining jobs.
+    
 */
-  SELECT LPAD(TO_NUMBER(SUM(utils.calculate(REPLACE(prd.formula_bp_orig, ':JOB_RUNS', :job_runs))))
-                           -prt.pile
-             ,8, ' ')
-             
-         ||' '|| INITCAP(prd.part) AS line
+  SELECT TO_CHAR(fin.short, '9G999G990') ||'  '|| INITCAP(fin.label) AS line
+  
+  FROM  (SELECT src.*
+               ,utils.calculate(quantity_true_pos_bp_copy) AS quantity
+               
+               ,utils.calculate(quantity_true_pos_bp_copy)
+               -src.pile                                   AS short
+              
+         FROM  (SELECT prd.produce, prt.*
+                      ,                                                       FLOOR(par.job_runs / par.bpc_runs)  
+                       ||' * '||    REPLACE(prd.formula_bp_orig, ':JOB_RUNS',                      par.bpc_runs )
+                       ||' + '||    REPLACE(prd.formula_bp_orig, ':JOB_RUNS', MOD  (par.job_runs,  par.bpc_runs)) AS quantity_true_pos_bp_copy
+       
+                FROM        mw_produce   prd
+                INNER JOIN  part         prt ON prt.label = prd.part
+                INNER JOIN (SELECT                SUBSTR(:list_a, 1, INSTR(:list_a, 'x') -1)  AS job_runs
+                                  ,NVL(:bpc_runs, SUBSTR(:list_a, 1, INSTR(:list_a, 'x') -1)) AS bpc_runs
+                            FROM   dual) par ON 1=1
+            
+                WHERE (utils.keywd(prt.ident, 'ADVANCED COMPONENTS')  = utils.f_get('k_numeric_true') OR
+                       utils.keywd(prt.ident, 'SUBSYSTEM COMPONENTS') = utils.f_get('k_numeric_true'))
+            
+                AND    utils.elem(prd.produce, :list_a)               = utils.f_get('k_numeric_true')) src) fin
 
-  FROM       mw_produce prd
-  INNER JOIN part       prt ON prt.label = prd.part
-
-  WHERE  utils.keywd(prd.part_id, 'ADVANCED MOON MATERIALS') =  utils.f_get('k_numeric_true')
-  AND    prd.produce                         IN ('HUGINN')
-
-  GROUP BY prd.part, prt.pile
-  ORDER BY prd.part
+  WHERE  0 < fin.short
   ;
 
 
@@ -222,6 +238,7 @@
            END
 
   ORDER BY avg_low_all_regions ASC;
+
 
 
 

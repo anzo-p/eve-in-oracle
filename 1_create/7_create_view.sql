@@ -172,6 +172,8 @@
     SELECT sel.composite_id
           ,sel.produce_id
           ,sel.produce
+          ,sel.depth
+          ,sel.leaf
           ,sel.good_id
           ,sel.good
           ,sel.material_efficiency
@@ -196,13 +198,13 @@
                  ,cmp.good_id
                  ,cmp.good
                  ,cmp.material_efficiency
-                 ,LEVEL
+                 ,LEVEL                         AS depth
                  ,cmp.part_id
                  ,cmp.part
                  ,cmp.consume_rate_base
                  ,cmp.consume_rate_true_station
                  ,cmp.consume_rate_true_pos
-                 ,CONNECT_BY_ISLEAF             AS summable
+                 ,CONNECT_BY_ISLEAF             AS leaf
                  ,cmp.quantity_raw
                  ,cmp.quantity_true_station
                  ,cmp.quantity_true_pos
@@ -270,9 +272,6 @@
            CONNECT BY PRIOR cmp.part = cmp.good
            ORDER BY produce, LEVEL, cmp.good, cmp.part) sel
            
-    -- as the formula is built from Root towards Leaves, only the leaves need be SUMmed for Total Quantities to Build :produce
-    WHERE  summable = utils.f_get('k_numeric_true')
-
 
 
 /*
@@ -298,13 +297,13 @@
           ,                par.need_full_bpcs ||' * '|| REPLACE(pdc.formula_bp_orig, ':JOB_RUNS', par.bpc_runs)
                                               ||' + '|| REPLACE(pdc.formula_bp_orig, ':JOB_RUNS', par.need_short_runs)  AS formula_bp_copy
   
-          ,utils.calculate(                             REPLACE(pdc.formula_bp_orig, ':JOB_RUNS', par.batch))           AS qty_final_bp_orig
+          ,utils.calculate(                             REPLACE(pdc.formula_bp_orig, ':JOB_RUNS', par.job_runs))        AS qty_final_bp_orig
     
           ,utils.calculate(par.need_full_bpcs ||' * '|| REPLACE(pdc.formula_bp_orig, ':JOB_RUNS', par.bpc_runs)
                                               ||' + '|| REPLACE(pdc.formula_bp_orig, ':JOB_RUNS', par.need_short_runs)) AS qty_final_bp_copy
   
     FROM        mw_produce   pdc
-    INNER JOIN (SELECT :job_runs                                    AS batch
+    INNER JOIN (SELECT :job_runs                                    AS job_runs
                       ,                  NVL(:bpc_runs, :job_runs)  AS bpc_runs
                       ,FLOOR(:job_runs / NVL(:bpc_runs, :job_runs)) AS need_full_bpcs
                       ,MOD  (:job_runs,  NVL(:bpc_runs, :job_runs)) AS need_short_runs
@@ -313,6 +312,19 @@
     WHERE       produce LIKE '%'|| UPPER(:produce) ||'%'
 */
     ;
+
+
+
+
+
+    CREATE OR REPLACE VIEW vw_produce_leaves AS
+      SELECT *
+      FROM   mw_produce
+    
+      -- as the formula is built from Root towards Leaves, only the leaves need be SUMmed for Total Quantities to Build :produce
+      WHERE  leaf = utils.f_get('k_numeric_true')
+      ;
+
 
 
 
