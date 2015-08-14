@@ -123,7 +123,7 @@ CREATE OR REPLACE PACKAGE BODY load_indu_details AS
 
       AND    ROWNUM   = 1;
 
-      RAISE_APPLICATION_ERROR(-20000, r_composite.part || ' is missing from part.txt, though required for ' || r_composite.good);
+      RAISE_APPLICATION_ERROR(-20000, r_composite.good || ' or ' || r_composite.part || ' is missing from part.txt, though required for ' || r_composite.good);
     EXCEPTION
       WHEN NO_DATA_FOUND THEN
         NULL;
@@ -330,6 +330,7 @@ CREATE OR REPLACE PACKAGE BODY load_indu_details AS
                    ,    a_part(i).eveapi_part_id          AS eveapi_part_id
                    ,    a_part(i).volume                  AS volume
                    ,NVL(a_part(i).material_efficiency, 0) AS material_efficiency
+                   ,NVL(a_part(i).outcome_units,       1) AS outcome_units
                    ,    a_part(i).base_invent_success     AS base_invent_success
                    ,    a_part(i).base_invent_copies      AS base_invent_copies
 
@@ -342,21 +343,23 @@ CREATE OR REPLACE PACKAGE BODY load_indu_details AS
         SET    prt.eveapi_part_id      = ins.eveapi_part_id
               ,prt.volume              = ins.volume
               ,prt.material_efficiency = ins.material_efficiency
+              ,prt.outcome_units       = ins.outcome_units
               ,prt.base_invent_success = ins.base_invent_success
               ,prt.base_invent_copies  = ins.base_invent_copies
 
         WHERE  NVL(prt.eveapi_part_id,        utils.k_dummy_number) <> NVL(ins.eveapi_part_id,      utils.k_dummy_number)
         OR     NVL(prt.volume,                utils.k_dummy_number) <> NVL(ins.volume,              utils.k_dummy_number)
         OR     NVL(prt.material_efficiency,   utils.k_dummy_number) <> NVL(ins.material_efficiency, utils.k_dummy_number)
+        OR     NVL(prt.outcome_units,         utils.k_dummy_number) <> NVL(ins.outcome_units,       utils.k_dummy_number)
         OR     NVL(prt.base_invent_success,   utils.k_dummy_number) <> NVL(ins.base_invent_success, utils.k_dummy_number)
         OR     NVL(prt.base_invent_copies,    utils.k_dummy_number) <> NVL(ins.base_invent_copies,  utils.k_dummy_number)
       
       WHEN NOT MATCHED THEN
         INSERT (ident, label, eveapi_part_id, volume, material_efficiency
-               ,base_invent_success, base_invent_copies)
+               ,outcome_units, base_invent_success, base_invent_copies)
 
         VALUES (sq_general.NEXTVAL, ins.label, ins.eveapi_part_id, ins.volume, ins.material_efficiency
-               ,ins.base_invent_success, ins.base_invent_copies);
+               ,ins.outcome_units, ins.base_invent_success, ins.base_invent_copies);
 
 
       -- yes yes, because no RETURNING INTO with MERGEs...
@@ -390,11 +393,10 @@ CREATE OR REPLACE PACKAGE BODY load_indu_details AS
                      ,(SELECT ident FROM part
                        WHERE  label = a_composite(i).part) AS part_id
         
-                     ,a_composite(i).good                  AS good
-                     ,a_composite(i).part                  AS part
-                     ,a_composite(i).quantity              AS quantity
-                     ,a_composite(i).materially_efficient  AS materially_efficient
-  
+                     ,    a_composite(i).good      AS good
+                     ,    a_composite(i).part      AS part
+                     ,    a_composite(i).quantity  AS quantity
+                     
                FROM   dual) ins
   
         ON (    cpr.good_id = ins.good_id
@@ -402,15 +404,13 @@ CREATE OR REPLACE PACKAGE BODY load_indu_details AS
         
         WHEN MATCHED THEN
           UPDATE
-          SET    cpr.quantity             = ins.quantity
-                ,cpr.materially_efficient = ins.materially_efficient
-  
-          WHERE  NVL(cpr.quantity,             utils.k_dummy_number) <> NVL(ins.quantity,             utils.k_dummy_number)
-          OR     NVL(cpr.materially_efficient, utils.k_dummy_string) <> NVL(ins.materially_efficient, utils.k_dummy_string)
+          SET    cpr.quantity = ins.quantity  
+
+          WHERE  NVL(cpr.quantity, utils.k_dummy_number) <> NVL(ins.quantity, utils.k_dummy_number)
         
         WHEN NOT MATCHED THEN
-          INSERT (ident, good_id, part_id, good, part, quantity, materially_efficient)
-          VALUES (sq_general.NEXTVAL, ins.good_id, ins.part_id, ins.good, ins.part, ins.quantity, ins.materially_efficient);
+          INSERT (ident, good_id, part_id, good, part, quantity)
+          VALUES (sq_general.NEXTVAL, ins.good_id, ins.part_id, ins.good, ins.part, ins.quantity);
   
     END IF;
 

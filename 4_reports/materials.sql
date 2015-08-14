@@ -123,13 +123,13 @@
 
 
 ------------------------------- the High Fidelity way: from Blueprint Copies. Leaving :bpc_runs to NULL makes it work just like Original Blueprints
-                               ,utils.calculate(                                          FLOOR(src.job_runs / NVL(:bpc_runs, src.job_runs))   -- how many Full BPCs?                               
-                                   ||' * '||    REPLACE(src.formula_bp_orig, ':JOB_RUNS',                      NVL(:bpc_runs, src.job_runs)  )
-                                   ||' + '||    REPLACE(src.formula_bp_orig, ':JOB_RUNS', MOD  (src.job_runs,  NVL(:bpc_runs, src.job_runs)))) -- plus how many Job Runs on one further BPC
-                                                                                                                                               AS quantity_true_pos_bp_copy
+                               ,utils.calculate(                                       FLOOR(src.units / NVL(:bpc_runs, src.units))   -- how many Full BPCs?                               
+                                   ||' * '||    REPLACE(src.formula_bp_orig, ':UNITS',                   NVL(:bpc_runs, src.units)  )
+                                   ||' + '||    REPLACE(src.formula_bp_orig, ':UNITS', MOD  (src.units,  NVL(:bpc_runs, src.units)))) -- plus how many Units/Job Runs on one further BPC
+                                                                                                                                      AS quantity_true_pos_bp_copy
 
                                 -- the faster way: from Original Blueprints, but too optimistic to use on Blueprint Copies
-                               ,utils.calculate(REPLACE(src.formula_bp_orig, ':JOB_RUNS',       src.job_runs                                )) AS quantity_true_pos_bp_orig
+                               ,utils.calculate(REPLACE(src.formula_bp_orig, ':UNITS',       src.units                             )) AS quantity_true_pos_bp_orig
 -------------------------------
                                 
                          FROM  (SELECT pdc.produce
@@ -142,12 +142,12 @@
 
                                       ,CASE
                                        -- format: Nx { [Elements, comma delimited] } eg. 3x{huginn,pilgrim,sacrilege}
-                                       --WHEN                Produce   EXISTS in Our List                      THEN do given Job Runs
+                                       --WHEN                Produce   EXISTS in Our List                      THEN do given Units
                                          WHEN utils.elem(pdc.produce, :list_a) = utils.v_get('k_numeric_true') THEN SUBSTR(:list_a, 1, INSTR(:list_a, 'x')-1)
                                          WHEN utils.elem(pdc.produce, :list_b) = utils.v_get('k_numeric_true') THEN SUBSTR(:list_b, 1, INSTR(:list_b, 'x')-1)
                                          WHEN utils.elem(pdc.produce, :list_c) = utils.v_get('k_numeric_true') THEN SUBSTR(:list_c, 1, INSTR(:list_c, 'x')-1)
                                          --...
-                                       END                 AS job_runs
+                                       END                 AS units
 
                                 FROM       vw_produce_leaves pdc
                                 INNER JOIN part              prt ON prt.ident = pdc.part_id
@@ -155,7 +155,7 @@
                                 WHERE  (utils.keywd(prt.ident, UPPER(:keyword)) = utils.f_get('k_numeric_true')   OR :keyword IS NULL)
                                 ) src
                         
-                         WHERE  src.job_runs IS NOT NULL
+                         WHERE  src.units IS NOT NULL
                          ORDER BY src.produce, src.good, src.part) mat
 
 
@@ -186,13 +186,13 @@
                -src.pile                                   AS short
               
          FROM  (SELECT prd.produce, prt.*
-                      ,                                                       FLOOR(par.job_runs / par.bpc_runs)  
-                       ||' * '||    REPLACE(prd.formula_bp_orig, ':JOB_RUNS',                      par.bpc_runs )
-                       ||' + '||    REPLACE(prd.formula_bp_orig, ':JOB_RUNS', MOD  (par.job_runs,  par.bpc_runs)) AS quantity_true_pos_bp_copy
+                      ,                                                    FLOOR(par.units / par.bpc_runs)  
+                       ||' * '||    REPLACE(prd.formula_bp_orig, ':UNITS',                   par.bpc_runs )
+                       ||' + '||    REPLACE(prd.formula_bp_orig, ':UNITS', MOD  (par.units,  par.bpc_runs)) AS quantity_true_pos_bp_copy
        
                 FROM        mw_produce   prd
                 INNER JOIN  part         prt ON prt.label = prd.part
-                INNER JOIN (SELECT                SUBSTR(:list_a, 1, INSTR(:list_a, 'x') -1)  AS job_runs
+                INNER JOIN (SELECT                SUBSTR(:list_a, 1, INSTR(:list_a, 'x') -1)  AS units
                                   ,NVL(:bpc_runs, SUBSTR(:list_a, 1, INSTR(:list_a, 'x') -1)) AS bpc_runs
                             FROM   dual) par ON 1=1
             

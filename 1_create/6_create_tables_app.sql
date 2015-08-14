@@ -48,12 +48,13 @@
                                              ,eveapi_part_id            INTEGER                                         NULL
                                              ,volume                    NUMBER(10,3)                                NOT NULL
                                              ,material_efficiency       NUMBER(5,3)               DEFAULT 0             NULL
+                                             ,outcome_units             INTEGER                   DEFAULT 1         NOT NULL
                                              ,pile                      INTEGER                                         NULL
                                              ,base_invent_success       NUMBER(5,3)                                     NULL
                                              ,base_invent_copies        INTEGER                                         NULL
               
                                              ,CONSTRAINT pk_part                        PRIMARY KEY (ident)
-            
+
                                               );
   
   CREATE INDEX ix_part_label                  ON part(label);
@@ -67,7 +68,7 @@
                                              ,good                      VARCHAR2(100)                               NOT NULL
                                              ,part                      VARCHAR2(100)                               NOT NULL
                                              ,quantity                  NUMBER(12,5)                                NOT NULL
-                                             ,materially_efficient      VARCHAR2(5)               DEFAULT 'FALSE'   NOT NULL
+
   
                                              ,CONSTRAINT fk_composite_good              FOREIGN KEY (good_id)           REFERENCES part(ident)
                                              ,CONSTRAINT fk_composite_part              FOREIGN KEY (part_id)           REFERENCES part(ident)

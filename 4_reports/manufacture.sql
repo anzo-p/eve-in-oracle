@@ -31,15 +31,27 @@
          The greatest of { mid spread at Jita, your adjusted offer } becomes Margin against Breakeven.
          And that margin is also made the Sort Order.
 */
-        ,utils.per_cent(p_share    => fin.mid_spread + ((fin.lowest_offer - fin.mid_spread) * :adjust/100) - breakeven
+        ,utils.per_cent(p_share    => GREATEST(fin.mid_spread       + ((fin.lowest_offer - fin.mid_spread) * :adjust/100)
+                                              ,fin.mid_spread_jita)
+                                     -fin.breakeven
                        ,p_total    => fin.breakeven
                        ,p_decimals => 1)                                                                                AS margin
 
 
-  FROM  (SELECT brk.produce, sel.name_region, brk.breakeven
-               ,sel.samples AS sel_samples, sel.lowest_offer, sel.offers_low_range
-               ,buy.samples AS buy_samples, buy.highest_bid, buy.bids_high_range
-               ,(sel.lowest_offer + buy.highest_bid) /2 AS mid_spread
+  FROM  (SELECT brk.produce
+               ,brk.outcome_units
+               ,sel.name_region
+               ,sel.samples          AS sel_samples
+               ,sel.lowest_offer
+               ,sel.offers_low_range
+               ,buy.samples          AS buy_samples
+               ,buy.highest_bid
+               ,buy.bids_high_range
+
+               ,(sel.lowest_offer
+                +buy.highest_bid) /2 AS mid_spread
+               
+               ,brk.breakeven
 
 
                ,(SELECT ROUND((MIN(s_sel.lowest_offer) + MAX(s_buy.highest_bid)) /2, 2)
@@ -50,13 +62,14 @@
                  AND    s_sel.region  = 10000002) AS mid_spread_jita -- at The Forge, Most likely Jita then
 
 
-         FROM  (SELECT pdc.produce_id, pdc.produce
+         FROM  (SELECT pdc.produce_id, pdc.produce, goo.outcome_units
          
                       ,load_market_data.get_breakeven(SUM(agr.offers_low_range
                                                          *utils.calculate(REPLACE(pdc.formula_bp_orig
-                                                                                 ,':JOB_RUNS'
-                                                                                 ,1)))) -- for simplicity lets assume we build only one Unit
-                                                                                 AS breakeven
+                                                                                 ,':UNITS'
+                                                                                 ,goo.outcome_units)) -- for simplicity lets assume we build only one Unit
+                                                         /goo.outcome_units)) AS breakeven            -- and for comparison also when one Run builds many units
+                                                         
                                                           
                 FROM       vw_produce_leaves    pdc
                 INNER JOIN part                 goo ON goo.ident   = pdc.produce_id
@@ -85,7 +98,7 @@
                                                                                                        ,p_direction     => agr.direction
                                                                                                        ,p_local_regions => :local_buy)
 
-                GROUP BY pdc.produce_id, pdc.produce) brk
+                GROUP BY pdc.produce_id, pdc.produce, goo.outcome_units) brk
                 
 
          -- sells and buys may OUTER JOIN to Product data, but they must INNER JOIN together because we need mid_spread
@@ -104,7 +117,6 @@
 --                 AND ( brk.breakeven       / buy.highest_bid <  load_market_data.f_get('k_buys_max_below_break')  ) -- conflicts with high :adjust
 --                 AND ( sel.lowest_offer    / brk.breakeven    > load_market_data.f_get('k_sells_min_above_break') ) -- basically rules out negative margins 
                 )
-
                  OR  :produce IS NOT NULL) -- obviously you want full results with specific Searches regardless whether theyre promising or not
 
         ) fin
@@ -127,33 +139,44 @@
     You will want to be MORE Price Sensitive with materials that constitute to higher pct (%) of the goods_total.
     Also you may make generous profits even if you are LESS price sensitive with the low pct materials.
     Better yet, as these prices actually are high-/low-end ranges, some materials you will likely get even cheaper.
+    
+
+    The CEIL()s/FLOOR()s makes it hard to implement quantities for one unit of { Ore, Fuel Blocks, Ammo, R.A.M., ... } (without sacrificing readability much)
+    They all outcome in many units which renders the "True Quantity for One Unit" an imaginary concept.    
+    - Ore, set          :units = 100, :bpc_runs = NULL
+    - Fuel Blocks, set  :units =  40, :bcp_runs = NULL
+    - Ammo, set         :units, :bpd_runs from your Faction Blueprint Copy
 */
-  SELECT INITCAP(SUBSTR(fin.produce, 1, 22)) AS produce, fin.job_runs AS n, INITCAP(SUBSTR(fin.part, 1, 22)) AS part
+  SELECT :units ||'x '|| INITCAP(SUBSTR(fin.produce, 1, 22))          AS produce
+        ,                INITCAP(SUBSTR(fin.part,    1, 22))          AS part
   
-        ,TO_CHAR(  fin.quantity,               '990G990G990D99') AS quantity
-        ,TO_CHAR(  fin.pile,                   '990G990G990D99') AS pile
+        ,TO_CHAR(  fin.quantity,                    '990G990G990D99') AS quantity
+        ,TO_CHAR(  fin.pile,                        '990G990G990D99') AS pile
 
         ,CASE WHEN fin.quantity - fin.pile > 0 THEN
-           TO_CHAR(fin.quantity - fin.pile,    '990G990G990D99')
-         END                                                     AS short
+           TO_CHAR(fin.quantity - fin.pile,         '990G990G990D99')
+         END                                                          AS short
 
-        ,TO_CHAR(  fin.short_volume,           '990G990G990D99') AS vol_short
+--        ,TO_CHAR(  fin.short_volume,                '990G990G990D99') AS vol_short
 
          -- most matetials you will likely want to haul with your Deep Space Transporter (DST), uncomment others as necessary
-        ,of_cargo_deeptransport                                  AS dst -- of_cargo_freighter AS frg, of_cargo_jump_freighter AS jf
+        ,of_cargo_deeptransport                                       AS dst -- of_cargo_freighter AS frg, of_cargo_jump_freighter AS jf
 
-        ,TO_CHAR(  fin.offers_low_range,       '990G990G990D99') AS quote
-        ,INITCAP(SUBSTR(fin.name_region, 1, 15)                ) AS region
-        ,TO_CHAR(  fin.items_total,        '990G990G990G990'   ) AS items_tot
-        ,                                                           pct
-        ,TO_CHAR(  fin.goods_total,        '990G990G990G990'   ) AS goods_tot
-        ,TO_CHAR(  fin.goods_total * 0.96, '990G990G990G990'   ) AS disconut_four
-        ,TO_CHAR(  fin.goods_total * 0.93, '990G990G990G990'   ) AS disconut_seven
-        ,TO_CHAR(  fin.breakeven,          '990G990G990G990'   ) AS break
-        ,TO_CHAR(  fin.just_buy_it,        '990G990G990G990'   ) AS just_buy_it
+        ,TO_CHAR(  fin.offers_low_range,            '990G990G990D99') AS quote
+        ,INITCAP(SUBSTR(fin.name_region, 1, 15)                     ) AS region
+        ,TO_CHAR(  fin.items_total,             '990G990G990G990'   ) AS items_tot
+        ,                                                                pct
+        ,TO_CHAR(  fin.goods_total,             '990G990G990G990'   ) AS goods_tot
+--        ,TO_CHAR(  fin.goods_total * 0.96,      '990G990G990G990'   ) AS dsconut_four
+        ,TO_CHAR(  fin.goods_total * 0.93,      '990G990G990G990'   ) AS dsconut_seven
+        ,TO_CHAR(  fin.breakeven,               '990G990G990G990'   ) AS break
+        ,TO_CHAR(  fin.just_buy_it,             '990G990G990G990'   ) AS just_buy_it
+
+        ,TO_CHAR(  fin.breakeven   / :units,        '990G990G990D99') AS break_unit
+        ,TO_CHAR(  fin.just_buy_it / :units,        '990G990G990D99') AS just_buy_one
 
 
-  FROM  (SELECT src.produce, src.part, src.pile, src.job_runs, src.offers_low_range, src.name_region
+  FROM  (SELECT src.produce, src.part, src.pile, src.offers_low_range, src.name_region
   
                ,                                                                SUM(src.quantity)                                          AS quantity
                ,                                                  src.volume *  SUM(src.quantity)                                          AS volume
@@ -171,39 +194,44 @@
                ,                             ROUND(     src.offers_low_range *  SUM(src.quantity)
                                                   /(SUM(src.offers_low_range *  SUM(src.quantity)) OVER (PARTITION BY src.produce))  *100) AS pct
                ,                             ROUND( SUM(src.offers_low_range *  SUM(src.quantity)) OVER (PARTITION BY src.produce))        AS goods_total
+
                ,CEIL(load_market_data.get_breakeven(SUM(src.offers_low_range *  SUM(src.quantity)) OVER (PARTITION BY src.produce)))       AS breakeven
 
 
-               ,(SELECT sub.offers_low_range * src.job_runs
+               ,(SELECT sub.offers_low_range * :units
                  FROM   vw_avg_sells_regions sub
                  WHERE  sub.part_id = src.produce_id
-                 AND    sub.region  = load_market_data.get_econ_region(p_part_id      => src.produce_id
-                                                                     ,p_direction     => 'SELL'
-                                                                     ,p_local_regions => :local_sell)  OR sub.region IS NULL) AS just_buy_it
+                 AND    sub.region  = load_market_data.get_econ_region(p_part_id       => src.produce_id
+                                                                      ,p_direction     => 'SELL'
+                                                                      ,p_local_regions => :local_sell)  OR sub.region IS NULL) AS just_buy_it
 
 
-         FROM  (SELECT pdc.produce_id, pdc.produce, pdc.part_id, pdc.part --, pdc.good_id, pdc.good
-                      ,pdc.material_efficiency, pdc.consume_rate_true_pos, pdc.quantity_true_pos
-                      ,prt.volume, prt.pile, par.job_runs
+         FROM  (SELECT pdc.produce_id
+                      ,pdc.produce
+                      --,pdc.good_id
+                      --,pdc.good
+                      --,pdc.part_id
+                      ,pdc.part
+                      ,prt.volume
+                      ,prt.pile
+                      ,sel.region
+                      ,sel.offers_low_range
+                      ,sel.name_region
                      
-                      ,utils.calculate(par.need_full_bpcs ||' * '|| REPLACE(pdc.formula_bp_orig, ':JOB_RUNS', par.bpc_runs)
-                                                          ||' + '|| REPLACE(pdc.formula_bp_orig, ':JOB_RUNS', par.need_short_runs)) AS quantity
-              
-                      ,sel.region, sel.offers_low_range, sel.name_region
+                      ,                par.need_full_bpcs ||' * '|| REPLACE(pdc.formula_bp_orig, ':UNITS', par.bpc_runs)
+                                                          ||' + '|| REPLACE(pdc.formula_bp_orig, ':UNITS', par.need_short_runs)  AS formula -- DEBUG
 
-/*
-AS FOR ORE YOU ONLY EVER NEED THE PRICE TO PAY IE COMPARE TO MARKET PRICE IE IN BATCHES OF 100 WHERE THE PRICE YOU JUST DIVIDE BY 100 IN YOUR HEAD
-SO ALWAYS :job_runs = 100 and :bpc_runs = NULL OR :job_runs
-BUT YOU HAVE TO SOLVE THE FUEL BLOCK AND RAM ISSUE TOO AT THE SAME TIME
-*/
-               
+                      ,utils.calculate(par.need_full_bpcs ||' * '|| REPLACE(pdc.formula_bp_orig, ':UNITS', par.bpc_runs)
+                                                          ||' + '|| REPLACE(pdc.formula_bp_orig, ':UNITS', par.need_short_runs)) AS quantity
+              
+
                 FROM             vw_produce_leaves    pdc
                 INNER JOIN       part                 prt ON prt.ident   = pdc.part_id 
 
-                INNER JOIN      (SELECT :job_runs                                    AS job_runs
-                                       ,NVL(:bpc_runs, :job_runs)                    AS bpc_runs
-                                       ,FLOOR(:job_runs / NVL(:bpc_runs, :job_runs)) AS need_full_bpcs
-                                       ,MOD  (:job_runs,  NVL(:bpc_runs, :job_runs)) AS need_short_runs
+                INNER JOIN      (SELECT                               :units   AS units
+                                       ,               NVL(:bpc_runs, :units)  AS bpc_runs
+                                       ,FLOOR(:units / NVL(:bpc_runs, :units)) AS need_full_bpcs
+                                       ,MOD  (:units,  NVL(:bpc_runs, :units)) AS need_short_runs
                                  FROM   dual)         par ON 1=1
 
                 LEFT OUTER JOIN  vw_avg_sells_regions sel ON sel.part_id = prt.ident
@@ -214,7 +242,7 @@ BUT YOU HAVE TO SOLVE THE FUEL BLOCK AND RAM ISSUE TOO AT THE SAME TIME
                                                                     ,p_direction     => sel.direction
                                                                     ,p_local_regions => :local_buy)    OR sel.region IS NULL)) src
                                                                      
-         GROUP BY src.produce_id, src.produce, src.part, src.volume, src.pile, src.job_runs, src.offers_low_range, src.name_region) fin
+         GROUP BY src.produce_id, src.produce, src.part, src.volume, src.pile, src.offers_low_range, src.name_region) fin
 
   ORDER BY fin.produce
           ,fin.items_total  DESC

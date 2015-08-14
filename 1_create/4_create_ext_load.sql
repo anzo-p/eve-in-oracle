@@ -10,7 +10,6 @@
 
 
 
-  DROP TABLE ext_load_domain;
   DROP TABLE ext_load_part;
   DROP TABLE ext_load_composite;
   DROP TABLE tmp_load_part;
@@ -37,6 +36,7 @@
                                              ,volume                   NUMBER(15,3)
                                              ,eveapi_part_id           INTEGER
                                              ,material_efficiency      NUMBER(10,3)
+                                             ,outcome_units            INTEGER
                                              ,base_invent_success      NUMBER(10,3)
                                              ,base_invent_copies       INTEGER)
     ORGANIZATION EXTERNAL      (
@@ -57,6 +57,7 @@
                                      ,volume                CHAR(10)
                                      ,eveapi_part_id        CHAR(10)
                                      ,material_efficiency   CHAR(10)
+                                     ,outcome_units         CHAR(5)
                                      ,base_invent_success   CHAR(10)
                                      ,base_invent_copies    CHAR(3))
                                      
@@ -70,8 +71,7 @@
 
   CREATE TABLE ext_load_composite            (good                     VARCHAR2(100)
                                              ,part                     VARCHAR2(100)
-                                             ,quantity                 NUMBER(10,3)
-                                             ,materially_efficient     VARCHAR2(5))
+                                             ,quantity                 NUMBER(10,3))
     ORGANIZATION EXTERNAL      (
                                   TYPE ORACLE_LOADER
                                   DEFAULT DIRECTORY directory_eve
@@ -87,8 +87,7 @@
                                      
                                      (good                  CHAR(100)
                                      ,part                  CHAR(100)
-                                     ,quantity              CHAR(10)
-                                     ,materially_efficient  CHAR(5))
+                                     ,quantity              CHAR(10))
 
                                   )
                                   LOCATION('composite.txt')
@@ -114,6 +113,7 @@
                                                         ,volume                   NUMBER(15,3)
                                                         ,eveapi_part_id           INTEGER
                                                         ,material_efficiency      NUMBER(5,3)
+                                                        ,outcome_units            INTEGER
                                                         ,base_invent_success      NUMBER(10,3)
                                                         ,base_invent_copies       INTEGER
                                                         
@@ -127,7 +127,6 @@
   CREATE GLOBAL TEMPORARY TABLE tmp_load_composite      (good                     VARCHAR2(100)
                                                         ,part                     VARCHAR2(100)
                                                         ,quantity                 NUMBER(10,3)
-                                                        ,materially_efficient     VARCHAR2(5)
                                                         
                                                         ) ON COMMIT DELETE ROWS;
 

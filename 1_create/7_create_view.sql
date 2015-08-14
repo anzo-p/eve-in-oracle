@@ -28,52 +28,15 @@
           ,cmp.good    -- = part.label
           ,prt.volume
           ,prt.material_efficiency
+          ,prt.outcome_units
           ,prt.pile
           ,prt.eveapi_part_id
           ,cmp.part_id
           ,cmp.part
           ,cmp.quantity
-          ,cmp.materially_efficient
     FROM       part      prt
     INNER JOIN composite cmp ON prt.ident = cmp.good_id;
     
-
-  -- details on a compositions constituents
-  CREATE OR REPLACE VIEW vw_composition AS
-    SELECT cmp.ident
-          ,cmp.good_id
-          ,cmp.good
-          ,cmp.part_id -- = part.ident
-          ,cmp.part
-          ,cmp.quantity
-          ,cmp.materially_efficient
-          ,prt.volume
-          ,prt.material_efficiency
-          ,prt.pile
-          ,prt.eveapi_part_id
-    FROM       composite cmp
-    INNER JOIN part      prt ON prt.ident = cmp.part_id;
-
-
-
-
-  CREATE OR REPLACE VIEW vw_composite_rigged AS
-/*
-    This view is only required because the Quantities of Parts of some items (below) are normalized to Output of One Unit.
-*/
-    SELECT ident
-          ,good_id
-          ,good
-          ,part_id
-          ,part
-
-          ,CASE
-             WHEN utils.keywd(good_id, 'FUEL BLOCKS') = utils.f_get('k_numeric_true') THEN quantity *  40 -- One Round of Fuel Block builds makes  40 Blocks
-             WHEN utils.keywd(good_id, 'R.A.M.')      = utils.f_get('k_numeric_true') THEN quantity * 100 --         ..of R.A.M.          ..makes 100 units
-             ELSE                                                                          quantity
-           END AS quantity
-
-    FROM   composite;
 
 
 
@@ -89,6 +52,7 @@
           ,sel.good
           ,sel.eveapi_part_id
           ,sel.material_efficiency
+          ,sel.outcome_units
           ,sel.consume_rate_base
           ,sel.consume_rate_true_station
           ,sel.consume_rate_true_pos
@@ -108,8 +72,11 @@
                  ,cmp.good
                  ,prt.eveapi_part_id
                  ,prt.material_efficiency
+                 ,prt.outcome_units
                  ,cmp.part_id
                  ,cmp.part
+
+
                  ,cmp.quantity                      AS quantity_raw
                  
                  ,(100 - material_efficiency) / 100 AS consume_rate_base
@@ -148,9 +115,8 @@
                   END                               AS consume_rate_true_station
 
       
-           FROM       part                prt
-           INNER JOIN vw_composite_rigged cmp ON prt.ident = cmp.good_id) sel;
-
+           FROM       part      prt
+           INNER JOIN composite cmp ON cmp.good_id = prt.ident) sel;
 
 
 
@@ -159,7 +125,7 @@
   CREATE MATERIALIZED VIEW mw_produce
   REFRESH COMPLETE ON DEMAND AS
 /*
-    In EVE Online Industry individual Jobs applies CEIL():ing of input items. Consequentially,
+    In EVE Online Industry individual Jobs applies CEIL():ing of input items. As a consequence,
     true quantities of required input items cannot be known until we know the Job Runs of all jobs,
     including the batch to build the end Produce. At that point we finally have access to
     the complete plan of jobs and materials.    
@@ -168,17 +134,19 @@
     A formula is composed through the levels that will eventually inform howto calculate the
     True Quantities of any and all required materials. The formula is built Top-Down from
     end-Produce through Components to Raw Materials.
+    
+    Technical note: Here we normalize outcome to 1 (one) Unit, essentially applies to R.A.M. and Fuel Blocks.
 */
     SELECT sel.composite_id
           ,sel.produce_id
           ,sel.produce
-          ,sel.depth
-          ,sel.leaf
           ,sel.good_id
           ,sel.good
+          ,sel.depth
           ,sel.material_efficiency
           ,sel.part_id
           ,sel.part
+          ,sel.leaf
           ,sel.consume_rate_base
           ,sel.consume_rate_true_station
           ,sel.consume_rate_true_pos
@@ -197,14 +165,14 @@
 
                  ,cmp.good_id
                  ,cmp.good
-                 ,cmp.material_efficiency
                  ,LEVEL                         AS depth
+                 ,cmp.material_efficiency
                  ,cmp.part_id
                  ,cmp.part
+                 ,CONNECT_BY_ISLEAF             AS leaf
                  ,cmp.consume_rate_base
                  ,cmp.consume_rate_true_station
                  ,cmp.consume_rate_true_pos
-                 ,CONNECT_BY_ISLEAF             AS leaf
                  ,cmp.quantity_raw
                  ,cmp.quantity_true_station
                  ,cmp.quantity_true_pos
@@ -225,7 +193,7 @@
                     The Formula for the required amount of Crystalline Carbonieds needed to build the required Photon Microprocessors
                     for ANY NUMBER of Ishtars is:
                     
-                      CEIL(CEIL(:JOB_RUNS * 1270.08) * 14.994)
+                      CEIL(CEIL(:UNITS * 1270.08) * 14.994)
                     
                     Key is that the CEIL()s make it a Discontinuous Function, where we need all terms before we may know the result.
                     We need to calculate the true reuired Quantities as late as possible. Therefore we need to bring the quantities as
@@ -234,25 +202,27 @@
                   
                   -- open leading CEIL/FLOOR:s
                   , utils.repeat(CASE
-                                    WHEN utils.keywd(cmp.part_id, 'BLUEPRINTS')         = utils.f_get('k_numeric_true') OR
-                                         utils.keywd(cmp.part_id, 'RESEARCH EQUIPMENT') = utils.f_get('k_numeric_true') THEN ''
-    
+                                    WHEN utils.keywd(cmp.good_id, 'BLUEPRINTS')         = utils.f_get('k_numeric_true') OR
+                                         utils.keywd(cmp.part_id, 'BLUEPRINTS')         = utils.f_get('k_numeric_true') THEN ''
+                                             
                                     WHEN utils.keywd(cmp.good_id, 'RAW MATERIALS')      = utils.f_get('k_numeric_true') THEN 'FLOOR('
-    
+                                         
                                     ELSE                                                                                     'CEIL('
                                   END
                                  ,LEVEL)               
 
-                  || ':JOB_RUNS'
+                  || ':UNITS'
                   
                   -- append the material multiplier of this level in the hierarchy
-                  || SYS_CONNECT_BY_PATH(REPLACE(TO_CHAR(cmp.quantity_true_pos) -- No POS? cmp.quantity_true_station
+                  || SYS_CONNECT_BY_PATH(REPLACE(TO_CHAR(cmp.quantity_true_pos -- No POS? cmp.quantity_true_station
+                                                        /cmp.outcome_units)    -- Ammo, R.A.M.s build 100 Units, Fuel Blocks 40 units
                                                 ,',', '.')
     
                   -- close each opened CEIL/FLOOR
                   ||              CASE
-                                    WHEN utils.keywd(cmp.part_id, 'BLUEPRINTS')         = utils.f_get('k_numeric_true') OR
-                                         utils.keywd(cmp.part_id, 'RESEARCH EQUIPMENT') = utils.f_get('k_numeric_true') THEN ''
+                                    WHEN utils.keywd(cmp.good_id, 'BLUEPRINTS')         = utils.f_get('k_numeric_true') OR
+                                         utils.keywd(cmp.part_id, 'BLUEPRINTS')         = utils.f_get('k_numeric_true') THEN ''
+                                       
                                     ELSE                                                                                     ')'
                                   END
     
@@ -281,11 +251,11 @@
     The example uses the same Crystalline Carbinodes and Photon Microprocessors as above.
 
     SELECT -- building out of an Original Blueprint's Unlimited Runs (still asusming only ME4%)
-                                        CEIL(CEIL(               :job_runs  * 1270.08) * 14.994)
+                                     CEIL(CEIL(            :units     * 1270.08) * 14.994)
     
            -- building Out of Blueprint Copies, assuming { same ME, same Max Runs, all Runs Remaining }
-          ,FLOOR(:job_runs/:bpc_runs) * CEIL(CEIL(               :bpc_runs  * 1270.08) * 14.994)   -- we need this many full BPCs of known limited Runs
-          +                             CEIL(CEIL(MOD(:job_runs, :bpc_runs) * 1270.08) * 14.994)   -- we need this many Runs on One further BPC
+          ,FLOOR(:units/:bpc_runs) * CEIL(CEIL(            :bpc_runs  * 1270.08) * 14.994)   -- we need this many full BPCs of known limited Runs
+          +                          CEIL(CEIL(MOD(:units, :bpc_runs) * 1270.08) * 14.994)   -- we need this many Runs on One further BPC
           
     FROM   dual;
 
@@ -294,19 +264,19 @@
     -- Finally this looks like the Minimal Necessary RAW SQL to actually Use the view mw_produce
     SELECT pdc.*
     
-          ,                par.need_full_bpcs ||' * '|| REPLACE(pdc.formula_bp_orig, ':JOB_RUNS', par.bpc_runs)
-                                              ||' + '|| REPLACE(pdc.formula_bp_orig, ':JOB_RUNS', par.need_short_runs)  AS formula_bp_copy
+          ,                par.need_full_bpcs ||' * '|| REPLACE(pdc.formula_bp_orig, ':UNITS', par.bpc_runs)
+                                              ||' + '|| REPLACE(pdc.formula_bp_orig, ':UNITS', par.need_short_runs)  AS formula_bp_copy
   
-          ,utils.calculate(                             REPLACE(pdc.formula_bp_orig, ':JOB_RUNS', par.job_runs))        AS qty_final_bp_orig
+          ,utils.calculate(                             REPLACE(pdc.formula_bp_orig, ':UNITS', par.units))           AS qty_final_bp_orig
     
-          ,utils.calculate(par.need_full_bpcs ||' * '|| REPLACE(pdc.formula_bp_orig, ':JOB_RUNS', par.bpc_runs)
-                                              ||' + '|| REPLACE(pdc.formula_bp_orig, ':JOB_RUNS', par.need_short_runs)) AS qty_final_bp_copy
+          ,utils.calculate(par.need_full_bpcs ||' * '|| REPLACE(pdc.formula_bp_orig, ':UNITS', par.bpc_runs)
+                                              ||' + '|| REPLACE(pdc.formula_bp_orig, ':UNITS', par.need_short_runs)) AS qty_final_bp_copy
   
     FROM        mw_produce   pdc
-    INNER JOIN (SELECT :job_runs                                    AS job_runs
-                      ,                  NVL(:bpc_runs, :job_runs)  AS bpc_runs
-                      ,FLOOR(:job_runs / NVL(:bpc_runs, :job_runs)) AS need_full_bpcs
-                      ,MOD  (:job_runs,  NVL(:bpc_runs, :job_runs)) AS need_short_runs
+    INNER JOIN (SELECT                               :units   AS units
+                      ,               NVL(:bpc_runs, :units)  AS bpc_runs
+                      ,FLOOR(:units / NVL(:bpc_runs, :units)) AS need_full_bpcs
+                      ,MOD  (:units,  NVL(:bpc_runs, :units)) AS need_short_runs
                 FROM   dual) par ON 1=1
   
     WHERE       produce LIKE '%'|| UPPER(:produce) ||'%'
@@ -322,7 +292,7 @@
       FROM   mw_produce
     
       -- as the formula is built from Root towards Leaves, only the leaves need be SUMmed for Total Quantities to Build :produce
-      WHERE  leaf = utils.f_get('k_numeric_true')
+      WHERE  leaf = utils.n_get('k_numeric_true')
       ;
 
 

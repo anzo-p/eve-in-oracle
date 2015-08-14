@@ -74,6 +74,11 @@ CREATE OR REPLACE PACKAGE BODY utils AS
 
 
   FUNCTION f_get(p_param VARCHAR2)
+/*
+    f as in Floating Point or 'Ignorance on decimals, give me a number'
+    and this is why sometimes we benefit (semantics- and/or performancewise)
+    when we know we want an integer, the n_get().
+*/
   RETURN BINARY_DOUBLE AS
     f_return BINARY_DOUBLE;
   BEGIN
