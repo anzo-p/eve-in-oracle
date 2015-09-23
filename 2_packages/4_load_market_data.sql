@@ -13,7 +13,7 @@ CREATE OR REPLACE PACKAGE load_market_data IS
 --- Realism Rules -------------------------------------
   k_practical_demand_range       CONSTANT BINARY_DOUBLE                     := 2 *1000 *1000 *1000; -- iskworth of Purchase Orders to aggregate an AVG for a more realistic Best Price
   k_practical_supply_range       CONSTANT BINARY_DOUBLE                     := 2 *1000 *1000 *1000; -- iskworth of Sell Orders...
-  k_notable_demand_good          CONSTANT BINARY_DOUBLE                     :=     200 *1000 *1000; -- minimum iskworth of Purchase Orders up for a considerable opportunity/yield
+  k_notable_demand_good          CONSTANT BINARY_DOUBLE                     :=     300 *1000 *1000; -- minimum iskworth of Purchase Orders up for a considerable opportunity/yield
   k_notable_supply_part          CONSTANT BINARY_DOUBLE                     :=      20 *1000 *1000; -- minimum iskwort of Sales Orders to justify the traveling
 
   k_buys_max_below_break         CONSTANT NUMBER                            := 1 + 20/100;          -- max proximity of highest bid to breakeven, %
@@ -45,10 +45,12 @@ CREATE OR REPLACE PACKAGE load_market_data IS
                                                                                
 
 
-  k_dstful                       CONSTANT PLS_INTEGER                       := 60000;  -- Deep Space Transport Cargo Bay
-  k_freightful                   CONSTANT PLS_INTEGER                       := 800000; -- Freighter Ship Cargo Bay
-  k_jumpfreightful               CONSTANT PLS_INTEGER                       := 300000; -- Jump Freighter Cargo Bay
 
+  k_dstful                       CONSTANT PLS_INTEGER                       :=  71500; -- Deep Space Transport  no Cargo Bay + Fleet Cargo + Transport Ships..  skill V + 10x Giant secure containers (+ 0x Expanded Cargohold)
+  k_freightful                   CONSTANT PLS_INTEGER                       := 707000; -- Freighter Ship       Min Cargo Bay               + {Racial) Freighter skill V                                + 1x Expanded Cargohold
+  k_jumpfreightful               CONSTANT PLS_INTEGER                       := 348000; -- Jump Freighter       Min Cargo Bay               + {Racial) Freighter skill V                                + 3x Expanded Cargohold
+
+  
   k_eveapi_fetch_jobs_per_sec    CONSTANT PLS_INTEGER                       := 5;
   k_build_cost_multiplier        CONSTANT NUMBER(5,2)                       := 1.03;   -- build cost is 1.5% of EVE Online Global Killboard Aggregates, and "not expected to change dramatically", double it for "Margin of Safety"
   k_sales_cost_multiplier        CONSTANT NUMBER(5,2)                       := 1.02;   -- Tax 0.75% + Optimal Brokering 0.75% + contingency + ignorance on that it should apply deducted from 100% not added to 100%
@@ -518,7 +520,11 @@ CREATE OR REPLACE PACKAGE BODY load_market_data AS
                          FROM            part                   prt
                          LEFT OUTER JOIN cache_market_quicklook cch ON cch.item_type_id = prt.eveapi_part_id
 
-                         WHERE     prt.eveapi_part_id IS NOT NULL
+                         -- only items we can expect market data for
+                         WHERE     prt.eveapi_part_id               IS NOT NULL
+                         AND    utils.keywd(prt.ident, 'CONTRACTS')  = utils.n_get('k_numeric_false')
+                         AND    utils.keywd(prt.ident, 'BLUEPRINTS') = utils.n_get('k_numeric_false')
+
                          AND   (   cch.cached_until   IS     NULL
                                 OR cch.cached_until    <     SYSTIMESTAMP)
 

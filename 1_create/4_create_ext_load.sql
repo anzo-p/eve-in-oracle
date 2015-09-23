@@ -17,6 +17,7 @@
   DROP TABLE tmp_load_assets;
   DROP TABLE cache_market_quicklook;
   DROP TABLE cache_asset_list;
+  DROP TABLE cache_indu_jobs;
 
 
 
@@ -145,6 +146,11 @@
 
 
   
+  CREATE TABLE cache_industry_jobs                      (corp_char_name           VARCHAR2(50)             NOT NULL
+                                                        ,cached_until             TIMESTAMP                NOT NULL
+                                                        ,xdoc                     XMLTYPE                  NOT NULL);
+
+
   CREATE TABLE cache_asset_list                         (corp_char_name           VARCHAR2(50)             NOT NULL
                                                         ,cached_until             TIMESTAMP                NOT NULL
                                                         ,xdoc                     XMLTYPE                  NOT NULL);
@@ -157,4 +163,5 @@
                                                         ,CONSTRAINT pk_cache_market_quicklook   PRIMARY KEY (item_type_id));
 
   CREATE INDEX ix_cache_mqlook_cached_until ON cache_market_quicklook(cached_until);
+  
 

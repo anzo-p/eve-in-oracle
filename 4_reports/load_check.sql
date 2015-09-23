@@ -1,7 +1,10 @@
 /*
   TODO
+  - merge_more_keywords is so bad, why not make it more like part.txt?
   - make a program that proves what relic and decryptor are optimal
 */
+
+
 BEGIN
 --  EXECUTE IMMEDIATE 'ALTER SESSION SET SQL_TRACE = FALSE';
   EXECUTE IMMEDIATE 'PURGE TABLESPACE eveonline USER EVE';
@@ -27,6 +30,7 @@ BEGIN
     BEGIN
       -- delete from cache_asset_list -- refresh from the Web Service, but be adviced CCP will not tolerate unnecessarily frequent & repetitive requests
       load_player_data.load_pile;
+      load_player_data.load_industry_jobs;
     END;
 
     BEGIN
@@ -43,7 +47,6 @@ END;
 
 
 
-
 -- Remaining JOBs
 SELECT COUNT(1) OVER (ORDER BY 1) AS remain
       --,TO_TIMESTAMP(next_date || next_sec)
@@ -55,7 +58,7 @@ FROM   user_jobs jobs ORDER BY jobs.job;
 
 
 
--- market_order DELETEd and now missing? (market_order is the way to DRILL IN and find where exactly the sell is before traveling there
+-- market_order DELETEd and now missing? (market_order is the way to DRILL IN and find where exactly the sell is before traveling there)
 SELECT *
 FROM            market_aggregate agr
 LEFT OUTER JOIN market_order     mor ON mor.part_id = agr.part_id
@@ -67,10 +70,9 @@ WHERE  mor.part_id IS NULL;
 
 --    Where is this Input needed?
   SELECT *
-  FROM   vw_composite
+  FROM   mw_composite
   WHERE  1=1
-  AND    part            LIKE '%'|| UPPER(:part)   ||'%'
-  AND    material_origin LIKE '%'|| UPPER(:origin) ||'%'
+  AND    part LIKE '%'|| UPPER(:part)   ||'%'
 /*
   Iso                        Ochre  Gneis  Hedber  Hemor        Kern  Omber                       Spodu
   Mega    Arkon  Bist
@@ -108,18 +110,25 @@ WHERE  mor.part_id IS NULL;
   ;
 
 
-
--- A product at Part but not broken into Inputs
-  SELECT *
-  FROM            part      prt
-  LEFT OUTER JOIN composite cmp ON cmp.good = prt.label
-  WHERE  cmp.good           IS NULL
-  AND    prt.material_origin = 'PRODUCE'
-  ORDER BY race, label
-  ;
-
   
 
   SELECT DISTINCT good FROM composite
   --WHERE good LIKE '%'|| UPPER(:good) ||'%'
   ORDER BY good ASC;
+
+
+
+-- Howto use Keywords
+  SELECT *
+  FROM   part
+  WHERE  material_efficiency <  10
+  AND    material_efficiency <>  4
+  
+  AND    0 = utils.keywd(ident, 'BLUEPRINTS')
+  AND    0 = utils.keywd(ident, 'BOOSTER')
+  AND    0 = utils.keywd(ident, 'MATERIALS')
+  AND    0 = utils.keywd(ident, 'RESEARCH EQUIPMENT')
+  AND    0 = utils.keywd(ident, 'CONTRACTS')
+  
+  ORDER BY material_efficiency ASC
+  ;

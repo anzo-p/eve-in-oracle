@@ -1,10 +1,9 @@
+  SELECT -- WHAT TO BUILD and where to sell
 /*
-    WHAT TO BUILD and where to sell?
-
     One way to yield on this is to build 5-10 different kinds of products out of those that show higher profits,
     and keep filling the shelves as they sell. Another valuable info is which products do not seem profitable at the moment.
 */
-  SELECT INITCAP(fin.produce) AS produce, INITCAP(fin.name_region) AS region
+         INITCAP(fin.produce) AS produce, INITCAP(fin.name_region) AS region
         ,            fin.sel_samples                                                                                    AS sells
         ,TO_CHAR(                        fin.lowest_offer,                                           '990G990G990G990') AS lowest_offer
         ,TO_CHAR(                        fin.offers_low_range,                                       '990G990G990G990') AS offers_low_range
@@ -59,7 +58,7 @@
                  INNER JOIN vw_avg_buys_regions  s_buy ON s_sel.part_id = s_buy.part_id
                                                       AND s_sel.region  = s_buy.region
                  WHERE  s_sel.part_id = brk.produce_id
-                 AND    s_sel.region  = 10000002) AS mid_spread_jita -- at The Forge, Most likely Jita then
+                 AND    s_sel.region  = 10000002) AS mid_spread_jita -- at The Forge, most likely Jita then
 
 
          FROM  (SELECT pdc.produce_id, pdc.produce, goo.outcome_units
@@ -113,7 +112,7 @@
                  OR   :local_sell                            IS NULL)
 
          AND   ((    1=1 -- comment out any of the below and still works
-                 AND ( buy.bids_high_range * buy.samples      > load_market_data.f_get('k_notable_demand_good')   ) -- capital bound in buy orders means interest
+--                 AND ( buy.bids_high_range * buy.samples      > load_market_data.f_get('k_notable_demand_good')   ) -- capital bound in buy orders means interest
 --                 AND ( brk.breakeven       / buy.highest_bid <  load_market_data.f_get('k_buys_max_below_break')  ) -- conflicts with high :adjust
 --                 AND ( sel.lowest_offer    / brk.breakeven    > load_market_data.f_get('k_sells_min_above_break') ) -- basically rules out negative margins 
                 )
@@ -133,9 +132,8 @@
 
 
 
+  SELECT -- BREAKEVEN FOR PRODUCE if all input materials bought at low, and FROM WHERE TO BUY them
 /*
-    Whats the BREAKEVEN FOR PRODUCE if all input materials bought at low? And from where to buy them cheapest?
-
     You will want to be MORE Price Sensitive with materials that constitute to higher pct (%) of the goods_total.
     Also you may make generous profits even if you are LESS price sensitive with the low pct materials.
     Better yet, as these prices actually are high-/low-end ranges, some materials you will likely get even cheaper.
@@ -147,33 +145,35 @@
     - Fuel Blocks, set  :units =  40, :bcp_runs = NULL
     - Ammo, set         :units, :bpd_runs from your Faction Blueprint Copy
 */
-  SELECT :units ||'x '|| INITCAP(SUBSTR(fin.produce, 1, 22))          AS produce
-        ,                INITCAP(SUBSTR(fin.part,    1, 22))          AS part
+         :units ||'x '|| INITCAP(SUBSTR(fin.produce, 1, 22))              AS produce
+        ,                INITCAP(SUBSTR(fin.part,    1, 22))              AS part
   
-        ,TO_CHAR(  fin.quantity,                    '990G990G990D99') AS quantity
-        ,TO_CHAR(  fin.pile,                        '990G990G990D99') AS pile
+        ,TO_CHAR(  fin.quantity,                        '990G990G990D99') AS quantity
+        ,TO_CHAR(  fin.pile,                            '990G990G990D99') AS pile
 
         ,CASE WHEN fin.quantity - fin.pile > 0 THEN
-           TO_CHAR(fin.quantity - fin.pile,         '990G990G990D99')
-         END                                                          AS short
+           TO_CHAR(fin.quantity - fin.pile,             '990G990G990D99')
+         END                                                              AS short
 
---        ,TO_CHAR(  fin.short_volume,                '990G990G990D99') AS vol_short
+--        ,TO_CHAR(  fin.short_volume,                    '990G990G990D99') AS vol_short
 
          -- most matetials you will likely want to haul with your Deep Space Transporter (DST), uncomment others as necessary
-        ,of_cargo_deeptransport                                       AS dst -- of_cargo_freighter AS frg, of_cargo_jump_freighter AS jf
+        ,of_cargo_deeptransport                                           AS dst -- of_cargo_freighter AS frg, of_cargo_jump_freighter AS jf
 
-        ,TO_CHAR(  fin.offers_low_range,            '990G990G990D99') AS quote
-        ,INITCAP(SUBSTR(fin.name_region, 1, 15)                     ) AS region
-        ,TO_CHAR(  fin.items_total,             '990G990G990G990'   ) AS items_tot
-        ,                                                                pct
-        ,TO_CHAR(  fin.goods_total,             '990G990G990G990'   ) AS goods_tot
---        ,TO_CHAR(  fin.goods_total * 0.96,      '990G990G990G990'   ) AS dsconut_four
-        ,TO_CHAR(  fin.goods_total * 0.93,      '990G990G990G990'   ) AS dsconut_seven
-        ,TO_CHAR(  fin.breakeven,               '990G990G990G990'   ) AS break
-        ,TO_CHAR(  fin.just_buy_it,             '990G990G990G990'   ) AS just_buy_it
+        ,TO_CHAR(  fin.offers_low_range,                '990G990G990D99') AS quote
+        ,INITCAP(SUBSTR(fin.name_region, 1, 15)                         ) AS region
+        ,TO_CHAR(  fin.items_total,                 '990G990G990G990'   ) AS items_tot
+        ,                                                                    pct
+        ,TO_CHAR(  fin.goods_total,                 '990G990G990G990'   ) AS goods_tot
+        ,TO_CHAR(  fin.breakeven,                   '990G990G990G990'   ) AS break
+        ,TO_CHAR(  fin.just_buy_it,                 '990G990G990G990'   ) AS just_buy_it
 
-        ,TO_CHAR(  fin.breakeven   / :units,        '990G990G990D99') AS break_unit
-        ,TO_CHAR(  fin.just_buy_it / :units,        '990G990G990D99') AS just_buy_one
+         -- unitwise fields necesary to compare Fuel Blocks, Ore.. against market; decimals necessary for most Ore
+        ,TO_CHAR(  fin.goods_total        / :units,     '990G990G990D99') AS goods_unit
+--        ,TO_CHAR(  fin.goods_total * 0.96,              '990G990G990'   ) AS dsconut_four
+        ,TO_CHAR(  fin.goods_total * 0.93 / :units,     '990G990G990D99') AS dsconut_seven
+        ,TO_CHAR(  fin.breakeven          / :units,     '990G990G990D99') AS break_unit
+        ,TO_CHAR(  fin.just_buy_it        / :units,     '990G990G990D99') AS just_buy_one
 
 
   FROM  (SELECT src.produce, src.part, src.pile, src.offers_low_range, src.name_region
@@ -219,7 +219,7 @@
                       ,sel.name_region
                      
                       ,                par.need_full_bpcs ||' * '|| REPLACE(pdc.formula_bp_orig, ':UNITS', par.bpc_runs)
-                                                          ||' + '|| REPLACE(pdc.formula_bp_orig, ':UNITS', par.need_short_runs)  AS formula -- DEBUG
+                                                          ||' + '|| REPLACE(pdc.formula_bp_orig, ':UNITS', par.need_short_runs)  AS formula  -- DEBUG
 
                       ,utils.calculate(par.need_full_bpcs ||' * '|| REPLACE(pdc.formula_bp_orig, ':UNITS', par.bpc_runs)
                                                           ||' + '|| REPLACE(pdc.formula_bp_orig, ':UNITS', par.need_short_runs)) AS quantity
@@ -237,10 +237,10 @@
                 LEFT OUTER JOIN  vw_avg_sells_regions sel ON sel.part_id = prt.ident
 
               
-                WHERE  produce LIKE '%'|| UPPER(:produce) ||'%'
-                AND   (sel.region = load_market_data.get_econ_region(p_part_id       => prt.ident
-                                                                    ,p_direction     => sel.direction
-                                                                    ,p_local_regions => :local_buy)    OR sel.region IS NULL)) src
+                WHERE  pdc.produce LIKE '%'|| UPPER(:produce) ||'%'
+                AND   (sel.region     = load_market_data.get_econ_region(p_part_id       => prt.ident
+                                                                        ,p_direction     => sel.direction
+                                                                        ,p_local_regions => :local_buy)    OR sel.region IS NULL)) src
                                                                      
          GROUP BY src.produce_id, src.produce, src.part, src.volume, src.pile, src.offers_low_range, src.name_region) fin
 

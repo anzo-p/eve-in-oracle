@@ -1,7 +1,7 @@
 
 /*
     Update: "turned out" that the in-Game material Consumption rules in EVE Online are best implemented by
-    letting Oracle RDBMS do it for us in a Hierarchical Quary. Then Materialize the result for performance.
+    letting Oracle RDBMS do it for us in a Hierarchical Query. Then Materialize the result for performance.
 
     Key Problem: the Actual Material Requirements CANNOT be known until we know the Job Runs for ALL relating
     Industry jobs. We need to calculate the Material Quantities as-Late-as-Possible and we do that through
@@ -202,12 +202,12 @@
                   
                   -- open leading CEIL/FLOOR:s
                   , utils.repeat(CASE
-                                    WHEN utils.keywd(cmp.good_id, 'BLUEPRINTS')         = utils.f_get('k_numeric_true') OR
-                                         utils.keywd(cmp.part_id, 'BLUEPRINTS')         = utils.f_get('k_numeric_true') THEN ''
+                                    WHEN utils.keywd(cmp.good_id, 'BLUEPRINTS')    = utils.f_get('k_numeric_true') OR
+                                         utils.keywd(cmp.part_id, 'BLUEPRINTS')    = utils.f_get('k_numeric_true') THEN ''
                                              
-                                    WHEN utils.keywd(cmp.good_id, 'RAW MATERIALS')      = utils.f_get('k_numeric_true') THEN 'FLOOR('
+                                    WHEN utils.keywd(cmp.good_id, 'RAW MATERIALS') = utils.f_get('k_numeric_true') THEN 'FLOOR('
                                          
-                                    ELSE                                                                                     'CEIL('
+                                    ELSE                                                                                 'CEIL('
                                   END
                                  ,LEVEL)               
 
@@ -220,10 +220,10 @@
     
                   -- close each opened CEIL/FLOOR
                   ||              CASE
-                                    WHEN utils.keywd(cmp.good_id, 'BLUEPRINTS')         = utils.f_get('k_numeric_true') OR
-                                         utils.keywd(cmp.part_id, 'BLUEPRINTS')         = utils.f_get('k_numeric_true') THEN ''
+                                    WHEN utils.keywd(cmp.good_id, 'BLUEPRINTS')    = utils.f_get('k_numeric_true') OR
+                                         utils.keywd(cmp.part_id, 'BLUEPRINTS')    = utils.f_get('k_numeric_true') THEN ''
                                        
-                                    ELSE                                                                                     ')'
+                                    ELSE                                                                                ')'
                                   END
     
                   -- finally link through the levels of hierarchy
@@ -280,6 +280,15 @@
                 FROM   dual) par ON 1=1
   
     WHERE       produce LIKE '%'|| UPPER(:produce) ||'%'
+
+
+
+    ...but but but..: ALL Tech3 thingies use:
+    - EXACTLY the SAME Components within a Category and through the Races
+    - much of the same Components anyways..
+
+    Hence building many sets of Tech3's allows further yield on Material Efficiencies    
+    See 'SELECT -- Accurate Material Requirements...' in materials.sql as an attempt to deal with this
 */
     ;
 
