@@ -332,7 +332,6 @@ SELECT -- CHEAPest Region for HIGH FLOW items
         ,TO_CHAR( sel.bids_high_range, '990G990D99') AS bid
         ,INITCAP(sel.name_region)                    AS region
 
-         -- Iskworth with a Fully Pimped Prospect 2x Deep Core Miners, Tech 1 Crystals
         ,TO_CHAR(SUM(ROUND(sel.reprocess_normalized
                           *sel.bids_high_range))
                  OVER (PARTITION BY sel.label_ore)
