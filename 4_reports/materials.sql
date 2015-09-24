@@ -76,7 +76,7 @@ SELECT -- CHEAPest Region for HIGH FLOW items
     
     Sample lists: list_a: 9x{huginn,pilgrim,sacrilege}  list_b: 5x{impel,prorator}
     
-    When Shopping: Set keyword to your loopuk Material
+    When Shopping: Set keyword to your lookup Material
     When Building: Set keyword to "components" for a list of required jobs and units to build.
 */
          :list_a ||' '|| :list_b ||' '|| :list_c               AS params
@@ -84,7 +84,6 @@ SELECT -- CHEAPest Region for HIGH FLOW items
         ,INITCAP(fin.part)                                     AS part
         ,TO_CHAR(fin.quantity_orig,    '990G990G990G990D99')   AS quantity_orig -- here as backup to illustrate material consumption on Copies over Originals
         ,TO_CHAR(fin.quantity_copy,    '990G990G990G990D99')   AS quantity
-        ,TO_CHAR(fin.quantity_copy * 0.5,    '990G990G990G990D99')   AS qu
         ,TO_CHAR(fin.pile,             '990G990G990G990D99')   AS pile
         ,TO_CHAR(fin.short,            '990G990G990G990D99')   AS shop_list
         ,TO_CHAR(fin.offers_low_range, '990G990G990G990D99')   AS quote
@@ -206,7 +205,7 @@ SELECT -- CHEAPest Region for HIGH FLOW items
 
     
     Massmaterials test sets, mind the Max Runs on Copies:
-    - No Benefit on Tech2 Builds: 9x{Sacrilege,Devoter,Guardian,Curse,Pilgrim}
+    - No Benefit on Tech2 Builds: 9x{Sacrilege,Devoter,Guardian,Curse,Pilgrim}, only explains tiny post-jobs residual in input Hangar
 
     - Considerable Benefit on Tech3: When the full set totally uses the same components
       15x{legion defensive - warfare processor,tengu defensive - warfare processor,loki defensive - warfare processor}

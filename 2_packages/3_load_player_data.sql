@@ -248,8 +248,9 @@ CREATE OR REPLACE PACKAGE BODY load_player_data AS
 
   PROCEDURE load_industry_jobs AS
 /*
-    Quick'n'Dirty for now, just to allow the Invention, Reverse Engineer Query at Materials.sql
     Set Your CORP_NAME and LEGACY API KEY DATA below, refer to the links at Must Read at Package Spec at the top.
+
+    Technical Debt: find ways to reuse load_pile() for this
 */  
     k_corp_char_name     CONSTANT VARCHAR2(50)                          := 'CORP_NAME';
     k_char_id            CONSTANT VARCHAR2(10)                          := '';
