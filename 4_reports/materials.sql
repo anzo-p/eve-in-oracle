@@ -336,14 +336,20 @@ SELECT -- CHEAPest Region for HIGH FLOW items
         ,TO_CHAR(SUM(ROUND(sel.reprocess_normalized
                           *sel.bids_high_range))
                  OVER (PARTITION BY sel.label_ore)
-                ,'9G990G990')                         AS value_index
+                ,'9G990G990')                        AS value_index
   
   FROM  (SELECT ore.label              AS label_ore
                ,ore.volume
-               ,:yield_m3 / ore.volume      AS amount_normalized
+               ,:yield_m3 / ore.volume AS amount_normalized
                ,cmp.quantity_true_pos
                ,cmp.formula_bp_orig
-               ,utils.calculate(REPLACE(REPLACE(cmp.formula_bp_orig, ':UNITS', :yield_m3 / ore.volume), ',', '.')) AS reprocess_normalized
+
+               ,utils.calculate(REPLACE(REPLACE(cmp.formula_bp_orig
+                                               ,':UNITS'
+                                               ,:yield_m3 / ore.volume)
+                                       ,',', '.')
+                                )      AS reprocess_normalized
+
                ,mnr.label              AS label_mineral
                ,buy.bids_high_range
                ,buy.name_region
