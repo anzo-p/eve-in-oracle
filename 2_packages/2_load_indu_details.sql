@@ -324,95 +324,89 @@ CREATE OR REPLACE PACKAGE BODY load_indu_details AS
     -- associated Keyword MERGE denies use of FORALL...
     FOR i IN a_part.FIRST .. a_part.LAST LOOP
 
-      MERGE INTO part prt -- Aka. INSERT.. EXCEPTION WHEN DUP_VAL_ON_INDEX THEN UPDATE..
-      
-      USING (SELECT     a_part(i).label                   AS label
-                   ,    a_part(i).eveapi_part_id          AS eveapi_part_id
-                   ,    a_part(i).volume                  AS volume
-                   ,NVL(a_part(i).material_efficiency, 0) AS material_efficiency
-                   ,NVL(a_part(i).outcome_units,       1) AS outcome_units
-                   ,    a_part(i).base_invent_success     AS base_invent_success
-                   ,    a_part(i).base_invent_copies      AS base_invent_copies
+    MERGE INTO part prt -- Aka. INSERT.. EXCEPTION WHEN DUP_VAL_ON_INDEX THEN UPDATE..
 
-             FROM   dual) ins
+    USING (SELECT     label
+                 ,    eveapi_part_id
+                 ,    volume
+                 ,NVL(material_efficiency, 0) AS material_efficiency
+                 ,NVL(outcome_units,       1) AS outcome_units
+                 ,    base_invent_success
+                 ,    base_invent_copies
+           FROM   tmp_load_part
+           WHERE  label IS NOT NULL) ins
 
-      ON (prt.label = ins.label)
-      
-      WHEN MATCHED THEN
-        UPDATE
-        SET    prt.eveapi_part_id      = ins.eveapi_part_id
-              ,prt.volume              = ins.volume
-              ,prt.material_efficiency = ins.material_efficiency
-              ,prt.outcome_units       = ins.outcome_units
-              ,prt.base_invent_success = ins.base_invent_success
-              ,prt.base_invent_copies  = ins.base_invent_copies
+    ON (prt.label = ins.label)
+    
+    WHEN MATCHED THEN
+      UPDATE
+      SET    prt.eveapi_part_id      = ins.eveapi_part_id
+            ,prt.volume              = ins.volume
+            ,prt.material_efficiency = ins.material_efficiency
+            ,prt.outcome_units       = ins.outcome_units
+            ,prt.base_invent_success = ins.base_invent_success
+            ,prt.base_invent_copies  = ins.base_invent_copies
 
-        WHERE  NVL(prt.eveapi_part_id,        utils.k_dummy_number) <> NVL(ins.eveapi_part_id,      utils.k_dummy_number)
-        OR     NVL(prt.volume,                utils.k_dummy_number) <> NVL(ins.volume,              utils.k_dummy_number)
-        OR     NVL(prt.material_efficiency,   utils.k_dummy_number) <> NVL(ins.material_efficiency, utils.k_dummy_number)
-        OR     NVL(prt.outcome_units,         utils.k_dummy_number) <> NVL(ins.outcome_units,       utils.k_dummy_number)
-        OR     NVL(prt.base_invent_success,   utils.k_dummy_number) <> NVL(ins.base_invent_success, utils.k_dummy_number)
-        OR     NVL(prt.base_invent_copies,    utils.k_dummy_number) <> NVL(ins.base_invent_copies,  utils.k_dummy_number)
-      
-      WHEN NOT MATCHED THEN
-        INSERT (ident, label, eveapi_part_id, volume, material_efficiency
-               ,outcome_units, base_invent_success, base_invent_copies)
+      WHERE  NVL(prt.eveapi_part_id,        utils.k_dummy_number) <> NVL(ins.eveapi_part_id,      utils.k_dummy_number)
+      OR     NVL(prt.volume,                utils.k_dummy_number) <> NVL(ins.volume,              utils.k_dummy_number)
+      OR     NVL(prt.material_efficiency,   utils.k_dummy_number) <> NVL(ins.material_efficiency, utils.k_dummy_number)
+      OR     NVL(prt.outcome_units,         utils.k_dummy_number) <> NVL(ins.outcome_units,       utils.k_dummy_number)
+      OR     NVL(prt.base_invent_success,   utils.k_dummy_number) <> NVL(ins.base_invent_success, utils.k_dummy_number)
+      OR     NVL(prt.base_invent_copies,    utils.k_dummy_number) <> NVL(ins.base_invent_copies,  utils.k_dummy_number)
+    
+    WHEN NOT MATCHED THEN
+      INSERT (ident, label, eveapi_part_id, volume, material_efficiency
+             ,outcome_units, base_invent_success, base_invent_copies)
 
-        VALUES (sq_general.NEXTVAL, ins.label, ins.eveapi_part_id, ins.volume, ins.material_efficiency
-               ,ins.outcome_units, ins.base_invent_success, ins.base_invent_copies);
+      VALUES (sq_general.NEXTVAL, ins.label, ins.eveapi_part_id, ins.volume, ins.material_efficiency
+             ,ins.outcome_units, ins.base_invent_success, ins.base_invent_copies);
 
 
-      -- yes yes, because no RETURNING INTO with MERGEs...
+
+    FOR i IN (SELECT label
+                    ,market_browser_path
+              FROM   tmp_load_part
+              WHERE  label IS NOT NULL) LOOP
+
       SELECT ident
       INTO   n_part_id
       FROM   part
-      WHERE  label = a_part(i).label;
-
+      WHERE  label = i.label;
 
       merge_keywords(p_part_id  => n_part_id
-                    ,p_keywords => a_part(i).market_browser_path);                          
-                          
-    END LOOP; -- FOR a_part(i)
+                    ,p_keywords => i.market_browser_path);
+                    
+    END LOOP;
 
 
 
-    OPEN  c_composite;
-    FETCH c_composite BULK COLLECT INTO a_composite;
-    CLOSE c_composite;
-  
-  
-    IF a_composite.COUNT > 0 THEN
-  
-      FORALL i IN a_composite.FIRST .. a_composite.LAST
-      
-        MERGE INTO composite cpr
-        
-        USING (SELECT (SELECT ident FROM part
-                       WHERE  label = a_composite(i).good) AS good_id
-                       
-                     ,(SELECT ident FROM part
-                       WHERE  label = a_composite(i).part) AS part_id
-        
-                     ,    a_composite(i).good      AS good
-                     ,    a_composite(i).part      AS part
-                     ,    a_composite(i).quantity  AS quantity
-                     
-               FROM   dual) ins
-  
-        ON (    cpr.good_id = ins.good_id
-            AND cpr.part_id = ins.part_id)
-        
-        WHEN MATCHED THEN
-          UPDATE
-          SET    cpr.quantity = ins.quantity  
+    MERGE INTO composite cpr
 
-          WHERE  NVL(cpr.quantity, utils.k_dummy_number) <> NVL(ins.quantity, utils.k_dummy_number)
-        
-        WHEN NOT MATCHED THEN
-          INSERT (ident, good_id, part_id, good, part, quantity)
-          VALUES (sq_general.NEXTVAL, ins.good_id, ins.part_id, ins.good, ins.part, ins.quantity);
+    USING (SELECT (SELECT ident FROM part
+                   WHERE  label = good) AS good_id
+                   
+                 ,(SELECT ident FROM part
+                   WHERE  label = part) AS part_id
+    
+                 ,good
+                 ,part
+                 ,quantity
+           FROM   tmp_load_composite
+           WHERE  good IS NOT NULL) ins
+
+    ON (    cpr.good_id = ins.good_id
+        AND cpr.part_id = ins.part_id)
+    
+    WHEN MATCHED THEN
+      UPDATE
+      SET    cpr.quantity = ins.quantity  
+
+      WHERE  NVL(cpr.quantity, utils.k_dummy_number) <> NVL(ins.quantity, utils.k_dummy_number)
+    
+    WHEN NOT MATCHED THEN
+      INSERT (ident, good_id, part_id, good, part, quantity)
+      VALUES (sq_general.NEXTVAL, ins.good_id, ins.part_id, ins.good, ins.part, ins.quantity);
   
-    END IF;
 
 
     refresh_views;
