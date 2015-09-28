@@ -294,20 +294,6 @@ CREATE OR REPLACE PACKAGE BODY load_indu_details AS
     However, if you change ANY Value that goes into the MERGE...ON (...) -clause, you will need to...
     ...well simplest way then is to DELETE part and composite and rerun this procedure.
 */
-    CURSOR c_part IS
-      SELECT *
-      FROM   tmp_load_part  prt
-      WHERE  prt.label IS NOT NULL;
-
-    CURSOR c_composite IS
-      SELECT *
-      FROM   tmp_load_composite
-      WHERE  good IS NOT NULL;
-      
-    TYPE t_part          IS TABLE OF c_part%ROWTYPE                INDEX BY BINARY_INTEGER;
-    TYPE t_composite     IS TABLE OF c_composite%ROWTYPE           INDEX BY BINARY_INTEGER;
-    a_part               t_part;
-    a_composite          t_composite;
     
     n_part_id            part.ident%TYPE;
   
@@ -315,14 +301,7 @@ CREATE OR REPLACE PACKAGE BODY load_indu_details AS
   
     cache_externals;
     pre_checks;
-        
-    OPEN  c_part;
-    FETCH c_part BULK COLLECT INTO a_part;
-    CLOSE c_part;
-  
 
-    -- associated Keyword MERGE denies use of FORALL...
-    FOR i IN a_part.FIRST .. a_part.LAST LOOP
 
     MERGE INTO part prt -- Aka. INSERT.. EXCEPTION WHEN DUP_VAL_ON_INDEX THEN UPDATE..
 
