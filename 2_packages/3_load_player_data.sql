@@ -175,67 +175,12 @@ CREATE OR REPLACE PACKAGE BODY load_player_data AS
         --LEFT OUTER JOIN part prt ON prt.eveapi_part_id = cld.type_id -- DEBUG
         INNER JOIN part prt ON prt.eveapi_part_id = cld.type_id
         WHERE  cch.corp_char_name = r_chr.name;
-        
-    END LOOP;
-      
 
 
-    -- finally cumulate to part
-    MERGE INTO part prt
-
-    USING (SELECT     prt.eveapi_part_id
-                 ,NVL(sel.quantity, 0)   AS quantity
 
 /*
-           The EVE API XML AssetList only includes items that the character currently has,
-           meaning the XML will NOT notify us that the character 'no longer' has any of it.
-           Still we Must then UPDATE part.pile = 0 for the final reports to work:
-
-           1. We need to guarantee a 'WHEN MACTHED' for every row, and we do so
-              by making sure this 'USING SELECT' returns *something* for every row.
-
-           2. And so we OUTER JOIN on the XML-data because not sure there is any,
-              but INNER JOIN on the same table that we are about to UPDATE (part).
-
-           3. Now, if we find any quantity in the XML, we use that
-              but if we dont, we known the pile must be 0.
 */
-           FROM             part prt
-           LEFT OUTER JOIN (SELECT     eveapi_item_type_id
-                                  ,SUM(quantity)           AS quantity
-                                  
-                            FROM  (SELECT eveapi_item_type_id, quantity -- from Factory Hangars
-                                   FROM       tmp_load_assets ast
-                                   INNER JOIN TABLE(a_holder) chr ON chr.name = ast.name
-                                   WHERE  chr.char_corp           = 'corp'
-                                   AND    ast.eveapi_location_id  =  load_player_data.v_get('k_loc_my_pos') -- if you copy this SQL out and DEBUG, it helps to have the v_get():s
-                                   
-                                   UNION ALL
-
-                                   SELECT eveapi_item_type_id, quantity -- from my various Ship Cargoes if I maybe havent had time to drop them to factory yet
-                                   FROM       tmp_load_assets ast
-                                   INNER JOIN TABLE(a_holder) chr ON chr.name = ast.name
-                                   WHERE  ast.name                = 'char'
-                                   AND    ast.eveapi_loc_type_id IN (load_player_data.v_get('k_item_impel')
-                                                                    ,load_player_data.v_get('k_item_mastodon')
-                                                                    ,load_player_data.v_get('k_item_prorator')
-                                                                    ,load_player_data.v_get('k_item_prowler')
-                                                                    ,load_player_data.v_get('k_item_fenrir')
-                                                                    ,load_player_data.v_get('k_item_providence')
-                                                                    ,load_player_data.v_get('k_item_ark')))                                   
-                                                          
-                            GROUP BY eveapi_item_type_id) sel ON sel.eveapi_item_type_id = prt.eveapi_part_id) ins
-
-    ON (prt.eveapi_part_id = ins.eveapi_part_id)
-    
-    WHEN MATCHED THEN
-      UPDATE
-      SET    prt.pile = ins.quantity
       
-    -- WHEN NOT MATCHED THEN NO ACTION
-    ;
-
-
 
 
     COMMIT;
