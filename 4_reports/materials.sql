@@ -491,3 +491,4 @@ SELECT -- CHEAPest Region for HIGH FLOW items
   AND    sel.region   = (SELECT eveapi_region_id FROM region
                          WHERE  name_region = :region OR :region IS NULL)
   ORDER BY sel.offers_low_range ASC;
+ 
