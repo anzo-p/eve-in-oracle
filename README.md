@@ -1,6 +1,6 @@
-# A small Data Engineering practise
+# A small Data Engineering exercise
 
-This project shows data engineering done right, and it actually made me rich in a video game through guidane for more optimal business decisions. It demonstrates that there is no limit for as to how high you may refine your information ([link](https://github.com/anzo-p/eve-in-oracle/blob/b4f763331b5972e0729519fbf1f61944ca6f4b55/4_reports/materials.sql#L236)), even out of very simple data *but only if you keep your Schema intact, through all the layers*.
+This project shows data engineering done right, and it actually made me rich in a video game through guidane for more optimal business decisions. It demonstrates that there is no limit for as to how high you may refine your information ([link](https://github.com/anzo-p/eve-in-oracle/blob/b4f763331b5972e0729519fbf1f61944ca6f4b55/4_reports/materials.sql#L236)) even out of very simple data *but only if you keep your Schema intact, through all the layers*.
 
 ---
 
@@ -72,13 +72,13 @@ Should you, however, let garbage into the system, then on top of the garbaged la
 | We keep pulling out smarter and smarter information | We are just getting garbage |
 | ------------- | ----------- |
 | SELECT FROM layer below some real clever info that is only possible because intact smart layers below | SELECT on top of that will give us garbage |
-| SELECT FROM layer below with another set of value add rules | we let a little bit of garbage in because [ reasons ] |
+| SELECT FROM layer below with another set of value add rules | we let a little bit of garbage in because [reasons] |
 | SELECT FROM layer below with some value add rules | SELECT FROM third.. |
 | SELECT FROM elementary data with some value add rules | SELECT FROM second.. |
 | SELECT FROM elementary data | SELECT FROM first.. |
 
 ---
 
-Relational Database Systems (RDBMS or RDS) were cool things back in the day, and even today, when done right, remain cute things to me.
+Relational Database Systems (RDBMS or RDS) were cool things back in the day, and even today, when done right, remain fascinating curiosities to say the least.
 
-They just arent providing data fast enough to meet the performance and data volumen requirements for modern applications that have a distributed deployment architecture.
+They just arent providing data fast enough to meet the performance and data volume requirements for modern applications that have a distributed deployment architecture.
