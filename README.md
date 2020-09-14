@@ -1,6 +1,6 @@
 # A small Data Engineering exercise
 
-This project shows data engineering done right, and it actually made me rich in a video game through guidane for more optimal business decisions. It demonstrates that there is no limit for as to how high you may refine your information ([link](https://github.com/anzo-p/eve-in-oracle/blob/b4f763331b5972e0729519fbf1f61944ca6f4b55/4_reports/materials.sql#L236)) even out of very simple data *but only if you keep your Schema intact, through all the layers*.
+This project experiments with data engineering and it actually made me rich in a video game through providing guidane for more optimal business decisions. It demonstrates that there is no limit for as to how high you may refine your information ([link](https://github.com/anzo-p/eve-in-oracle/blob/b4f763331b5972e0729519fbf1f61944ca6f4b55/4_reports/materials.sql#L236)) even out of very simple data *but only if you keep your Schema intact, through all the layers*.
 
 ---
 
@@ -52,14 +52,12 @@ WHERE  field IN (SELECT ...
                  WHERE  ...
 ```
 
-Eventually you need to *materialize* ([link](https://github.com/anzo-p/eve-in-oracle/blob/b4f763331b5972e0729519fbf1f61944ca6f4b55/1_create/7_create_view.sql)) some of those layers, result sets of previous queries, in order to have them precomputed so that the system can compute the next layer op top of that fast. Materializations of precomputed results is, in a nutshell, how everything is made fast in computing, starting from small algorithms ([link](https://gist.github.com/anzo-p/4d7ddc5529a05dcf9e09aa3ee746dfc7)) all the way to distributed systems of hundreds of millions of users.
-
-Technically this mans that, should you use a relational database model, which still is a dejure and defacto information refiner, then you **must** follow the rules of
-- referential integrity - your related data must link together unambiguously
-- field normalization - your one collection of data, the table, must hold only fields that are functionally depended on each others - for the given situation and so
+Technically this mans that, should you use a relational database model and SQL, which are specifically invented to do so, then you **must** follow the following rules:
+- referential integrity - your related data, the FOREIGN KEYs in one table, to the row identificaiton in that related table, must link together unambiguously
+- field normalization - your one collection of data, the table, must only conain fields that are functionally depended on each others - for the given situation, and so
   - your *core fact* tables **must** be normalized
-  - *special purpose VIEWs* to produce some right formatting for the next layer, may be denormalized, but they will remain useful for that next layer only, in that given stack of queries
-- data integrity - your schema must resist values that would make the field anomalous
+  - *special purpose VIEWs* to produce some desired/proper structuring, typically aggregation, for the next layer, may be denormalized, but they will only remain useful for that next layer in that given stack of queries
+- data integrity - your schema must resist values that are meaningless or ambiguous to any fields, through CONSTRAINTs that you need to define
 
 Failure to follow these rules will result in..
 
@@ -67,7 +65,7 @@ Failure to follow these rules will result in..
 
 ## Garbage
 
-Should you, however, let garbage into the system, then on top of the garbaged layer you will only get more garbage but no longer any information of higher refine. Below is a table to illustrate this. On the left side there remains no limit for as to how high you may refine your data. On the right side the acquisition of more clever information stops at the layer that is let to succumb to anomalous data or non-integrity.
+Should you, however, let ambigous data of non-integrity into the system, then starting from that data you will only get garbage but no longer any information of higher refine. Below is a table to illustrate this. On the left side there remains no limit for as to how high you may refine your data. On the right side the acquisition of more clever information stops at the layer that is let to succumb to garbage.
 
 | We keep pulling out smarter and smarter information | We are just getting garbage |
 | ------------- | ----------- |
@@ -79,6 +77,12 @@ Should you, however, let garbage into the system, then on top of the garbaged la
 
 ---
 
-Relational Database Systems (RDBMS or RDS) were cool things back in the day, and even today, when done right, remain fascinating curiosities to say the least.
+## Performance
 
-They just arent providing data fast enough to meet the performance and data volume requirements for modern applications that have a distributed deployment architecture.
+Eventually, when adding more an more queries on top, the system will choke because there just are too many layers, subqueries to compute in a single query. For performance, you need to *materialize* ([link](https://github.com/anzo-p/eve-in-oracle/blob/b4f763331b5972e0729519fbf1f61944ca6f4b55/1_create/7_create_view.sql)) some of those layers, result sets of previous queries - have them precomputed so that the system can compute all those layers fast enough. Materializations of precomputed results is, in a nutshell, how all real-timelike performance is achieved in computing. This is true from small algorithms ([link](https://gist.github.com/anzo-p/4d7ddc5529a05dcf9e09aa3ee746dfc7)) all the way to distributed systems of hundreds of millions of users.
+
+---
+
+Relational Database Systems (RDBMS or RDS) were cool things back in the day, and even today, because of their potential, remain a fascinating curiosity to say the least.
+
+Centralized RDBMS's just arent putting out data quickly enough to meet the requirements for performance and volumes of data of modern applications that have a distributed deployment architecture, because of so many users.
