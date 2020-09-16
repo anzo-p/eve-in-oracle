@@ -1,6 +1,6 @@
 # A small Data Engineering exercise
 
-This project experiments with data engineering and it actually made me rich in a video game through providing guidane for more optimal business decisions. It demonstrates that there is no limit for as to how high you may refine your information ([link](https://github.com/anzo-p/eve-in-oracle/blob/b4f763331b5972e0729519fbf1f61944ca6f4b55/4_reports/materials.sql#L236)) even out of very simple data *but only if you keep your Schema intact, through all the layers*.
+This project experiments with data engineering and it actually made me rich in a video game through providing guidane for more optimal business decisions. It demonstrates that there is no limit for as to how high you may refine your information (see [link](https://github.com/anzo-p/eve-in-oracle/blob/b4f763331b5972e0729519fbf1f61944ca6f4b55/4_reports/materials.sql#L236), which pulls data from [link](https://github.com/anzo-p/eve-in-oracle/blob/b4f763331b5972e0729519fbf1f61944ca6f4b55/1_create/7_create_view.sql#L70)) even out of very simple data *but only if you keep your Schema intact, through all the layers*.
 
 ---
 
@@ -18,7 +18,7 @@ help us understand which items comprise most to the final expenses - ie. which o
 
 WHERE the produces has actual demand in the market
 AND   the supply demand price discrepancy, buy/sell -spread is high
-AND   for goodness sake, show us all the data in a single result, dont make us run many queries
+AND   for goodness sake, show us all the necessary data (but nothing else) in a single result, dont make us run many queries
 ```
 
 If you want data to tell you smart things and give you guidance in business decisions, you **must** start with smart questions and then let data tell you the answers. (Most often in a reciprocal way, where you gain some answers that guides you to shape further quesitons from the data and so on.)
@@ -52,7 +52,7 @@ WHERE  field IN (SELECT ...
                  WHERE  ...
 ```
 
-Technically this mans that, should you use a relational database model and SQL, which are specifically invented to do so, then you **must** follow the following rules:
+Technically this mans that, should you use a relational database model and SQL, which are specifically invented for this purpose, then you **must** follow the following rules:
 - referential integrity - your related data, the FOREIGN KEYs in one table, to the row identificaiton in that related table, must link together unambiguously
 - field normalization - your one collection of data, the table, must only conain fields that are functionally depended on each others - for the given situation, and so
   - your *core fact* tables **must** be normalized
